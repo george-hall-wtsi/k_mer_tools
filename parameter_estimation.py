@@ -211,16 +211,16 @@ def tests():
 
 	new_hists = plotting.calculate_hist_dict(file_path, 51)
 
-	plt.plot(new_hists.keys(), new_hists.values())
-	plt.yscale ('log')
-	plt.xlabel("Occurrences")
-	plt.ylabel("Frequencies")
-	plt.xlim(1, 1000)
-	plt.ylim(1, 1000000)
-	plt.tick_params(labelright = True)
-	plt.title(file_path + " with Poisson estimation")
+	plotting.plot_graph({51: new_hists})
+#	plt.yscale ('log')
+#	plt.xlabel("Occurrences")
+#	plt.ylabel("Frequencies")
+#	plt.xlim(1, 1000)
+#	plt.ylim(1, 1000000)
+#	plt.tick_params(labelright = True)
+#	plt.title(file_path + " with Poisson estimation")
 
-	plt.show()
+#	plt.show()
 	
 	
 tests()

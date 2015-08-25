@@ -140,40 +140,39 @@ def generate_histogram(input_file_path, k_mer_size):
 		raise Exception("Incorrect file extension.")
 		
 
-def compute_genome_size(input_file_path, k_size_list):
+def compute_genome_size(hists_dict):
 
 	genome_size_list = []
-	
-	for k_size in k_size_list:
-	
-		hist_dict = calculate_hist_dict(input_file_path, k_size)
-		hist_dict_augmented = format_data(hist_dict)
-		
+	for size in hists_dict.keys():
+		hist_dict_augmented = format_data(hists_dict[size])		
 		modes = calculate_modes(hist_dict_augmented, 1)
+		
  		# genome_size = total num of k-mer words / first mode of occurences
- 		print compute_num_kmer_words(hist_dict) , modes[0][0]
-		genome_size = compute_num_kmer_words(hist_dict) / modes[0][0]
-		genome_size_list.append((k_size, genome_size))
+		genome_size = compute_num_kmer_words(hists_dict[size]) / modes[0][0]
+		genome_size_list.append((size, genome_size))
 	
 	return genome_size_list
 
 
-def plot_graph(input_file_path, k_mer_sizes):
+def plot_graph(hists_dict):
 
-	for k_mer in k_mer_sizes:
-		hist_dict = calculate_hist_dict(input_file_path, k_mer)	
-		plt.plot(hist_dict.keys(),hist_dict.values())
+	k_mer_sizes = hists_dict.keys()
+	for size in k_mer_sizes:
+		plt.plot(hists_dict[size].keys(), hists_dict[size].values())
 		
-	plt.xlim(0,5000)
-	#plt.ylim(0,2400)
+	plt.xlim(1, 1000)
+	plt.ylim(1, 1000000)
 	plt.yscale('log')
 	plt.xlabel("Occurrences")
 	plt.ylabel("Frequencies")
-	plt.legend(k_mer_sizes)
-	plt.title(input_file_path)
-	plt.tick_params(labelright=True)
+	desired_title = raw_input("Enter graph's title: ")
+	plt.legend(hists_dict.keys())
+	plt.title(desired_title)
+	plt.tick_params(labelright = True)
 
 	plt.show()
+	
+	return
 	
 	
 def calculate_hist_dict(input_file_path, k_size):
@@ -252,6 +251,12 @@ def get_path_k_size():
 def main():
 
 	input_file_path, k_mer_sizes = get_path_k_size()
+	
+	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
+	hists_dict = {} 
+	
+	for size in k_mer_sizes:
+		hists_dict[size] = calculate_hist_dict(input_file_path, size)
 
 	while True:
 	
@@ -259,14 +264,21 @@ def main():
 		
 		if choice == "1":
 			print ""
-			for size in compute_genome_size(input_file_path, k_mer_sizes):
-				print "Size calculated to be " + str(size[1]) + " base pairs"
+			for size in compute_genome_size(hists_dict):
+				print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
+				str(size[0]) + "mers)"
 		
 		elif choice == "2":
-			plot_graph(input_file_path, k_mer_sizes)	
+			plot_graph(hists_dict)	
 			
 		elif choice == "0":
 			input_file_path, k_mer_sizes = get_path_k_size()
+			
+			# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
+			hists_dicts = {} 
+	
+			for size in k_mer_sizes:
+				hists_dict[size] = calculate_hist_dict(input_file_path, size)
 			
 		else:
 			print "\nExiting...\n"
