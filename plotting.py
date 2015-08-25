@@ -8,6 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import parse_dat_to_histo as parse_data
+import graph_settings
 
 
 def compute_hist_from_fast(input_file_path, k_size):
@@ -171,14 +172,19 @@ def plot_graph(hists_dict):
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
 		plt.plot(hists_dict[size].keys(), hists_dict[size].values())
-		
-	plt.xlim(1, 1000)
-	plt.ylim(1, 1000000)
-	plt.yscale('log')
-	plt.xlabel("Occurrences")
-	plt.ylabel("Frequencies")
-	desired_title = raw_input("Enter graph's title: ")
+	
+	reload(graph_settings)
+	settings = graph_settings.generate_settings() 
+	
+	plt.xlim(settings['x_lower'], settings['x_upper'])
+	plt.ylim(settings['y_lower'], settings['y_upper'])
+	plt.xscale(settings['x_scale'])
+	plt.yscale(settings['y_scale'])
+	plt.xlabel(settings['x_label'])
+	plt.ylabel(settings['y_label'])
+	
 	plt.legend(hists_dict.keys())
+	desired_title = raw_input("Enter graph's title: ")
 	plt.title(desired_title)
 	plt.tick_params(labelright = True)
 
