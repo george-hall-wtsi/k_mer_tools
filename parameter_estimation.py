@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import scipy.stats
 
 import plotting
-import p_e_tests as tests
 
 def generate_initial_parameters(hist_dict, num_parameters):	
 
