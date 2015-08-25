@@ -26,31 +26,28 @@ def parse(input_file_path, k_mer_size):
 	
 	file_name = input_file_path.split("/")[-1].split(".")[0] + "_" + str(k_mer_size) + "mer"
 	
-	to_write = open("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
-	file_name + ".hgram","w")
+	with open("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + file_name \
+	+ ".hgram","w") as to_write:
 	
-	f = open(input_file_path,"r")
-	file_lines = f.readlines()
-	f.close()
+		with open(input_file_path,"r") as f:
+			file_lines = f.readlines()
 	
-	line_count = sum(1 for line in file_lines)
+		line_count = sum(1 for line in file_lines)
 	
-	iCount = 0
-	for line in file_lines:
-		storeStr = ""
-		iCount += 1
-		for word in line.split(" "):
-			if len(word) == 0 or str(word) in ['0', '0\n']:
-				pass
-			elif word[0].isdigit() and storeStr == "":
-				storeStr += str(word) + " "
-			elif word[0].isdigit():
-				storeStr += str(word)[:-1]
-		if iCount == line_count:
-			storeStr += "0" 
+		iCount = 0
+		for line in file_lines:
+			storeStr = ""
+			iCount += 1
+			for word in line.split(" "):
+				if len(word) == 0 or str(word) in ['0', '0\n']:
+					pass
+				elif word[0].isdigit() and storeStr == "":
+					storeStr += str(word) + " "
+				elif word[0].isdigit():
+					storeStr += str(word)[:-1]
+			if iCount == line_count:
+				storeStr += "0" 
 
-		if len(storeStr) > 0:
-			to_write.write(storeStr + "\n")
-			
-	to_write.close()
-	
+			if len(storeStr) > 0:
+				to_write.write(storeStr + "\n")
+

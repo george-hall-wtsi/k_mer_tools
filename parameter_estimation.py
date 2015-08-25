@@ -44,7 +44,9 @@ def log_poisson(k,m):
 	
 	
 def calculate_poisson_prob(lambda_vals, weights, c_val):
+	
 	"""Returns value of zero-truncated Poisson Distribution formula as given in paper. """
+	
 	return sum(((scipy.stats.poisson(lambda_vals[i]).pmf(c_val) / 						\
 	(1 - math.exp(-lambda_vals[i]))) * weights[i]) for i in xrange(len(weights)))
 	
@@ -161,10 +163,6 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 	
 	
 
-
-
-
-
 	
 ########## TESTS ##########
 
@@ -208,19 +206,8 @@ def tests():
 		mixture_proportions, j))
 	
 	plt.plot(xrange(1, number_iterations), [y for y in y_list])
-
 	new_hists = plotting.calculate_hist_dict(file_path, 51)
-
 	plotting.plot_graph({51: new_hists})
-#	plt.yscale ('log')
-#	plt.xlabel("Occurrences")
-#	plt.ylabel("Frequencies")
-#	plt.xlim(1, 1000)
-#	plt.ylim(1, 1000000)
-#	plt.tick_params(labelright = True)
-#	plt.title(file_path + " with Poisson estimation")
-
-#	plt.show()
 	
 	
 tests()
