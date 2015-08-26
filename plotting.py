@@ -63,12 +63,17 @@ def calculate_modes(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = format_data(hist_dict)
 	modes = []
-	for x in reversed(sorted(find_extrema(hist_dict_augmented, window_size = 15, 
-	alternate = False)['Max'], key = lambda pair: pair[1])):
-		if len(modes) < n:
-			modes.append(x)
-		else:
-			break
+	window_size = 15
+	
+	while len(modes) < n: # Decrease window size until appropriately small
+		modes = []
+		for x in reversed(sorted(find_extrema(hist_dict_augmented, window_size, 
+		alternate = False)['Max'], key = lambda pair: pair[1])):
+			if len(modes) < n:
+				modes.append(x)
+			else:
+				break
+		window_size = window_size - 5
 
 	return modes
 	
@@ -93,8 +98,7 @@ def compute_genome_size(hists_dict):
 
 	genome_size_list = []
 	for size in hists_dict.keys():
-		hist_dict_augmented = format_data(hists_dict[size])		
-		modes = calculate_modes(hist_dict_augmented, 1)
+		modes = calculate_modes(hists_dict[size], 1)
 		
  		# genome_size = total num of k-mer words / first mode of occurences
 		genome_size = compute_num_kmer_words(hists_dict[size]) / modes[0][0]
@@ -197,7 +201,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 def generate_histogram(input_file_path, k_mer_size):
 	
 	"""
-	Effectively ensures that a .hgram file exists and is stored at the correct location for
+	Essentially ensures that a .hgram file exists and is stored at the correct location for
 	the file stored at 'input_file_path'. 
 	"""
 
@@ -245,7 +249,7 @@ def calculate_hist_dict(input_file_path, k_size):
 		for line in hgram_data.readlines():
 			occ_and_freq = line.split(" ")
 			store_dict[int(occ_and_freq[0])] = int(occ_and_freq[1])
-				
+	
 	return store_dict
 
 
@@ -277,7 +281,7 @@ def get_path_k_size():
 	
 	for size in k_mer_sizes:
 		hists_dict[size] = calculate_hist_dict(input_file_path, size)
-		
+
 	return hists_dict
 
 		

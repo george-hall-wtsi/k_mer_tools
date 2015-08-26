@@ -38,6 +38,7 @@ def parse(input_file_path, k_mer_size):
 		for line in file_lines:
 			storeStr = ""
 			iCount += 1
+			
 			for word in line.split(" "):
 				if len(word) == 0 or str(word) in ['0', '0\n']:
 					pass
