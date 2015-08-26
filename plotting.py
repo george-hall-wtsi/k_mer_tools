@@ -3,6 +3,7 @@
 import os.path
 import subprocess32
 import random
+import argparse
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -284,34 +285,49 @@ def get_path_k_size():
 
 	return hists_dict
 
+
+def create_parser():
+	
+	"""
+	Uses argparse module to create an argument parser. This parser's first argument is the
+	function which the user wishes to execute, and its second argument is the k-mer sizes
+	which the user wishes to use. 
+	"""
+	
+	parser = argparse.ArgumentParser(
+	description = "A tool for computing genomic characteristics using k-mers")
+	
+	parser.add_argument("function", help = "Specify which function is to be executed", 
+	choices = ["plot", 	"size"])
+	parser.add_argument("path", help = "Location at which the data is stored")
+	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
+	nargs = '+')
+	
+	args = parser.parse_args()
+	
+	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
+	hists_dict = {}
+	
+	for size in args.k_mer_sizes:
+		hists_dict[size] = calculate_hist_dict(args.path, size)
+	
+	
+	return (args.function, hists_dict)
+
 		
 def main():
 
-	hists_dict = get_path_k_size()
-
-	while True:
+	function, hists_dict = create_parser()
 	
-		choice = raw_input("\n1 = Calculate Size; 2 = Plot Graph; 0 = Change Data; ENTER = Exit; ")
+	if function == "plot":
+		plot_graph(hists_dict)
 		
-		if choice == "1":
-			# Calculate genome size
-			print ""
-			for size in compute_genome_size(hists_dict):
-				print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
-				str(size[0]) + "mers)"
+	if function == "size":
+		print ""
+		for size in compute_genome_size(hists_dict):
+			print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
+			str(size[0]) + "mers)"
 		
-		elif choice == "2":
-			# Plot graphs
-			plot_graph(hists_dict)	
-			
-		elif choice == "0":
-			# Get new input
-			hists_dict = get_path_k_size()		
-			
-		else:
-			print "\nExiting...\n"
-			return		
-				
 								
 if __name__ == "__main__":
 	main()
