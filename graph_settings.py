@@ -8,6 +8,6 @@ def generate_settings():
 	# Scales can be linear or log
 	settings['x_scale'] = 'linear'
 	settings['y_scale'] = 'log'
-	settings['x_label'] = 'Occurrences'
-	settings['y_label'] = 'Frequencies'
+	settings['x_label'] = 'k-mer Coverage'
+	settings['y_label'] = 'k-mer Count Frequency'
 	return settings
