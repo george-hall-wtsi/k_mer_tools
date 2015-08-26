@@ -22,10 +22,10 @@ def compute_hist_from_fast(input_file_path, k_size):
 	print "Computing hgram data for k = " + str(k_size) + " for first time"
 
 	print "Reading data for k = " + str(k_size)
-	file_location = input_file_path
+
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
-	("-m " + str(k_size)), "-s 100M", "-t 20", "-C", file_location])
+	("-m " + str(k_size)), "-s 100M", "-t 20", "-C", input_file_path])
 
 	print "Processing histogram for k = " + str(k_size)
 	
