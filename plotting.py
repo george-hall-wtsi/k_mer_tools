@@ -10,35 +10,6 @@ import matplotlib.pyplot as plt
 import parse_dat_to_histo as parse_data
 import graph_settings
 
-
-def compute_hist_from_fast(input_file_path, k_size):
-	
-	"""
-	Uses Jellyfish to count k-mers of length k_size from the file stored at 
-	'input_file_path'. This data is stored as a .hgram file in
-	/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/. 
-	"""
-
-	print "Computing hgram data for k = " + str(k_size) + " for first time"
-
-	print "Reading data for k = " + str(k_size)
-
-	# Counts occurences of k-mers of size "k-size" in "file_input":  
-	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
-	("-m " + str(k_size)), "-s 100M", "-t 20", "-C", input_file_path])
-
-	print "Processing histogram for k = " + str(k_size)
-	
-	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer"
-	
-	with open("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
-	file_name + ".hgram","w") as out_file:
-		# Computes histogram data and stores in "out_file"
-		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", 
-		"mer_counts.jf"], stdout=out_file)
-	
-	print "Finished for k = " + str(k_size)
-
 		
 def find_extrema(hist_dict, window_size, alternate = False):
 	
@@ -118,41 +89,6 @@ def format_data(hist_dict):
 	return hist_dict
 
 
-def compute_num_kmer_words(hist_dict):
-
-	total_kmer_words = 0
-	total_kmer_words = sum(occurrence * hist_dict[occurrence] for occurrence in hist_dict)
-	
-	return total_kmer_words
-
-
-def generate_histogram(input_file_path, k_mer_size):
-	
-	"""
-	Effectively ensures that a .hgram file exists and is stored at the correct location for
-	the file stored at 'input_file_path'. 
-	"""
-
-	file_name = input_file_path.split("/")[-1].split(".")[0]
-	extension = input_file_path.split("/")[-1].split(".")[-1]
-	
-	if os.path.isfile("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
-	file_name + "_" + str(k_mer_size) + "mer.hgram"):
-		return
-	
-	elif extension in ["data","dat"]:
-		parse_data.parse(input_file_path, k_mer_size)
-		
-	elif extension in ["fasta","fa","fsa","fastq"]:
-		if k_mer_size == []:
-			raise Exception("Cannot use an empty k-mer size list when trying to create \
-			histograms")
-		compute_hist_from_fast(input_file_path, k_mer_size)
-		
-	else:
-		raise Exception("Incorrect file extension.")
-		
-
 def compute_genome_size(hists_dict):
 
 	genome_size_list = []
@@ -191,34 +127,15 @@ def plot_graph(hists_dict):
 	plt.show()
 	
 	return
-	
-	
-def calculate_hist_dict(input_file_path, k_size):
 
-	"""
-	Returns dictionary consisting of keys corresponding to occurrences and values corresponding 
-	to frequencies.
-	"""
-	
-	generate_histogram(input_file_path, k_size)
-		
-	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
-	extension = str(input_file_path.split("/")[-1].split(".")[-1])
-	
-	if extension == "hgram":
-		hgram_name = input_file_path
-	else:
-		hgram_name = "/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + \
-		file_name + ".hgram"
-		
-	with open(hgram_name, 'r') as hgram_data:
 
-		store_dict = {}
-		for line in hgram_data.readlines():
-			occ_and_freq = line.split(" ")
-			store_dict[int(occ_and_freq[0])] = int(occ_and_freq[1])
-				
-	return store_dict
+def compute_num_kmer_words(hist_dict):
+
+	total_kmer_words = 0
+	total_kmer_words = sum(occurrence * hist_dict[occurrence] for occurrence in hist_dict)
+	
+	return total_kmer_words
+	
 
 def generate_sample(hist_dict, sample_size):
 	
@@ -246,6 +163,90 @@ def generate_sample(hist_dict, sample_size):
 		sample[j] = sample.get(j,0) + 1 
 	
 	return sample
+
+
+def compute_hist_from_fast(input_file_path, k_size):
+	
+	"""
+	Uses Jellyfish to count k-mers of length k_size from the file stored at 
+	'input_file_path'. This data is stored as a .hgram file in
+	/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/. 
+	"""
+
+	print "Computing hgram data for k = " + str(k_size) + " for first time"
+
+	print "Reading data for k = " + str(k_size)
+
+	# Counts occurences of k-mers of size "k-size" in "file_input":  
+	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
+	("-m " + str(k_size)), "-s 100M", "-t 20", "-C", input_file_path])
+
+	print "Processing histogram for k = " + str(k_size)
+	
+	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer"
+	
+	with open("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
+	file_name + ".hgram","w") as out_file:
+		# Computes histogram data and stores in "out_file"
+		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", 
+		"mer_counts.jf"], stdout=out_file)
+	
+	print "Finished for k = " + str(k_size)
+	
+
+def generate_histogram(input_file_path, k_mer_size):
+	
+	"""
+	Effectively ensures that a .hgram file exists and is stored at the correct location for
+	the file stored at 'input_file_path'. 
+	"""
+
+	file_name = input_file_path.split("/")[-1].split(".")[0]
+	extension = input_file_path.split("/")[-1].split(".")[-1]
+	
+	if os.path.isfile("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
+	file_name + "_" + str(k_mer_size) + "mer.hgram"):
+		return
+	
+	elif extension in ["data","dat"]:
+		parse_data.parse(input_file_path, k_mer_size)
+		
+	elif extension in ["fasta","fa","fsa","fastq"]:
+		if k_mer_size == []:
+			raise Exception("Cannot use an empty k-mer size list when trying to create \
+			histograms")
+		compute_hist_from_fast(input_file_path, k_mer_size)
+		
+	else:
+		raise Exception("Incorrect file extension.")
+
+
+def calculate_hist_dict(input_file_path, k_size):
+
+	"""
+	Returns dictionary consisting of keys corresponding to occurrences and values corresponding 
+	to frequencies.
+	"""
+	
+	generate_histogram(input_file_path, k_size)
+		
+	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
+	extension = str(input_file_path.split("/")[-1].split(".")[-1])
+	
+	if extension == "hgram":
+		hgram_name = input_file_path
+	else:
+		hgram_name = "/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + \
+		file_name + ".hgram"
+		
+	with open(hgram_name, 'r') as hgram_data:
+
+		store_dict = {}
+		for line in hgram_data.readlines():
+			occ_and_freq = line.split(" ")
+			store_dict[int(occ_and_freq[0])] = int(occ_and_freq[1])
+				
+	return store_dict
 
 
 def get_path_k_size():
