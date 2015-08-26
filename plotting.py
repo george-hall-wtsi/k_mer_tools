@@ -254,38 +254,6 @@ def calculate_hist_dict(input_file_path, k_size):
 	return store_dict
 
 
-def get_path_k_size():
-	
-	"""
-	Prompts the user to input the location of the data they want to use, and a list containing
-	all the k-mer siaes which they wish to use.
-	"""
-	
-	input_file_path = raw_input("Enter the location of data to be used: ") 
-	# Often stored at /lustre/scratch110/sanger/gh10/jellyfish/
-	
-	if input_file_path == "":
-		raise Exception("File location cannot be empty!")
-	
-	extension = input_file_path.split("/")[-1].split(".")[-1]
-	if extension != "hgram":
-		k_mer_sizes = input("\nEnter k-mer sizes: ") # List containing all desired k-mer sizes
-		if k_mer_sizes == []:
-			raise Exception("k-mer size array cannot be empty!")
-	else:
-		# k-mer size of .hgram file
-		k_mer_size = input_file_path.split("/")[-1].split(".")[0].split("_")[-1][:-3]
-		k_mer_sizes = [k_mer_size]	
-	
-	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
-	hists_dict = {} 
-	
-	for size in k_mer_sizes:
-		hists_dict[size] = calculate_hist_dict(input_file_path, size)
-
-	return hists_dict
-
-
 def create_parser():
 	
 	"""
