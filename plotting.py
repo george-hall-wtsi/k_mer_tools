@@ -254,7 +254,7 @@ def calculate_hist_dict(input_file_path, k_size):
 	return store_dict
 
 
-def create_parser():
+def parser():
 	
 	"""
 	Uses argparse module to create an argument parser. This parser's first argument is the
@@ -266,7 +266,7 @@ def create_parser():
 	description = "A tool for computing genomic characteristics using k-mers")
 	
 	parser.add_argument("function", help = "Specify which function is to be executed", 
-	choices = ["plot", 	"size"])
+	choices = ["p", "plot", "s", "size"])
 	parser.add_argument("path", help = "Location at which the data is stored")
 	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
 	nargs = '+')
@@ -280,17 +280,17 @@ def create_parser():
 		hists_dict[size] = calculate_hist_dict(args.path, size)
 	
 	
-	return (args.function, hists_dict)
+	return (args, hists_dict)
 
 		
 def main():
 
-	function, hists_dict = create_parser()
+	args, hists_dict = parser()
 	
-	if function == "plot":
+	if args.function in ["p", "plot"]:
 		plot_graph(hists_dict)
 		
-	if function == "size":
+	if args.function in ["s", "size"]:
 		print ""
 		for size in compute_genome_size(hists_dict):
 			print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
