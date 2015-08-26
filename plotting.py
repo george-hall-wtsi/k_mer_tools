@@ -62,7 +62,7 @@ def find_extrema(hist_dict, window_size, alternate = False):
 	
 def calculate_modes(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
-	hist_dict_augmented = format_data(hist_dict)
+	hist_dict_augmented = pad_data(hist_dict)
 	modes = []
 	window_size = 15
 	
@@ -79,7 +79,7 @@ def calculate_modes(hist_dict, n):
 	return modes
 	
 	
-def format_data(hist_dict):
+def pad_data(hist_dict):
 
 	"""
 	This function is required when, for example, simulated data is being used, as frequency 
