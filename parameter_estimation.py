@@ -77,7 +77,7 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 
 	error_sum = 0
 	error_n = 0
-	prev_ll = -sys.maxint 
+	prev_ll = -float(sys.maxint) 
 	
 	max_iterations = 30
 	iteration = 0
@@ -115,9 +115,11 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 					else b + (math.log(1.0 + math.exp(a - b))))(log_p_c, mixture_log_p[i])
 							
 			# Calculate P(m_i|c): 
-			mixture_log_p = [probability - log_p_c for probability in mixture_log_p]
-			mixture_counts = [mixture_counts[i] + math.exp(mixture_log_p[i]) 
-			* frequency for i in xrange(number_of_components)]
+			mixture_log_p = [(probability - log_p_c) for probability in mixture_log_p]
+			#mixture_counts = [mixture_counts[i] + (math.exp(mixture_log_p[i]) 
+			#* frequency) for i in xrange(number_of_components)]
+			for i in xrange(number_of_components):
+				mixture_counts[i] += (math.exp(mixture_log_p[i]) * frequency)
 	
 			error_sum += occurrence * frequency * math.exp(mixture_log_p[0])
 			error_n += frequency * math.exp(mixture_log_p[0])
@@ -132,7 +134,7 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 		
 		# Calculate log-likelihood:
 		sum_ll = 0.0
-		for occurrence in count_vector.keys():
+		for occurrence, frequency in count_vector.iteritems():
 			partial_ll = 0.0
 			for i in xrange(number_of_components):
 				# Calculate zero-truncation term
@@ -146,11 +148,11 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 					partial_ll = (lambda a,b: a + (math.log(1.0 + math.exp(b - a))) \
 					if (a > b) else b + (math.log(1.0 + math.exp(a - b))))(partial_ll, ll)
 					
-			sum_ll += occurrence * partial_ll
+			partial_ll = partial_ll * frequency
+			sum_ll += partial_ll
 			
 		difference = sum_ll - prev_ll
 		ll_improvement = difference / abs(sum_ll)
-		
 		if (ll_improvement < 0.00001):
 			break
 		
@@ -168,7 +170,7 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 
 def tests():
 
-	file_path = "/lustre/scratch110/sanger/gh10/Data/yeast-cut-300_1_0002.fastq"
+	file_path = "/lustre/scratch110/sanger/gh10/jellyfish/yeast-miseq_1_0002.fa"
 	
 	num_parameters = 6 
 	k_size = 51
