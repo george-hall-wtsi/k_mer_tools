@@ -108,14 +108,14 @@ def compute_genome_size(hists_dict):
 	return genome_size_list
 
 
-def plot_graph(hists_dict, ro = False):
+def plot_graph(hists_dict, use_dots = False):
 
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
-		if not ro:
+		if not use_dots:
 			plt.plot(hists_dict[size].keys(), hists_dict[size].values())
-		if ro:
-			plt.plot(hists_dict[size].keys(), hists_dict[size].values(), 'ro')
+		if use_dots:
+			plt.plot(hists_dict[size].keys(), hists_dict[size].values(), 'o')
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
 	
@@ -269,7 +269,8 @@ def parser():
 	
 	parser.add_argument("function", help = "specify which function is to be executed", 
 	choices = ["p", "plot", "s", "size"])
-	parser.add_argument("-ro", help = "plot the histogram using red dots", action = "store_true")
+	parser.add_argument("-o", "-dots", help = "plot the histogram using red dots", 
+	action = "store_true")
 	parser.add_argument("path", help = "location at which the data is stored")
 	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
 	nargs = '+')
@@ -291,8 +292,8 @@ def main():
 	args, hists_dict = parser()
 	
 	if args.function in ["p", "plot"]:
-		if args.ro:
-			plot_graph(hists_dict, ro = True)
+		if args.o or args.dots:
+			plot_graph(hists_dict, use_dots = True)
 		else:
 			plot_graph(hists_dict)
 		
