@@ -108,7 +108,7 @@ def compute_genome_size(hists_dict):
 	return genome_size_list
 
 
-def plot_graph(hists_dict, use_dots = False):
+def plot_graph(hists_dict, graph_title, use_dots = False):
 
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
@@ -126,9 +126,12 @@ def plot_graph(hists_dict, use_dots = False):
 	plt.xlabel(settings['x_label'])
 	plt.ylabel(settings['y_label'])
 	
+	if graph_title:
+		plt.title(graph_title)
+	else:
+		plt.title()
+	
 	plt.legend(hists_dict.keys())
-	desired_title = raw_input("Enter graph's title: ")
-	plt.title(desired_title)
 	plt.tick_params(labelright = True)
 
 	plt.show()
@@ -274,6 +277,8 @@ def parser():
 	parser.add_argument("path", help = "location at which the data is stored")
 	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
 	nargs = '+')
+	parser.add_argument("--graph_title", help = "Specify the title for the graph", type = str,
+	default = "")
 	
 	args = parser.parse_args()
 	
@@ -292,10 +297,15 @@ def main():
 	args, hists_dict = parser()
 	
 	if args.function in ["p", "plot"]:
-		if args.o:
-			plot_graph(hists_dict, use_dots = True)
+		if args.graph_title:
+			graph_title = args.graph_title
 		else:
-			plot_graph(hists_dict)
+			graph_title = args.path
+			
+		if args.o:
+			plot_graph(hists_dict, graph_title, use_dots = True)
+		else:
+			plot_graph(hists_dict, graph_title)
 		
 	if args.function in ["s", "size"]:
 		print ""
