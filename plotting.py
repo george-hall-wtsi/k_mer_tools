@@ -108,7 +108,7 @@ def compute_genome_size(hists_dict):
 	return genome_size_list
 
 
-def plot_graph(hists_dict, graph_title, use_dots = False):
+def plot_graph(hists_dict, graph_title = "", use_dots = False):
 
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
@@ -125,12 +125,8 @@ def plot_graph(hists_dict, graph_title, use_dots = False):
 	plt.yscale(settings['y_scale'])
 	plt.xlabel(settings['x_label'])
 	plt.ylabel(settings['y_label'])
-	
-	if graph_title:
-		plt.title(graph_title)
-	else:
-		plt.title()
-	
+
+	plt.title(graph_title)
 	plt.legend(hists_dict.keys())
 	plt.tick_params(labelright = True)
 
