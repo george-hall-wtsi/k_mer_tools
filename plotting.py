@@ -269,7 +269,7 @@ def parser():
 	
 	parser.add_argument("function", help = "specify which function is to be executed", 
 	choices = ["p", "plot", "s", "size"])
-	parser.add_argument("-o", "-dots", help = "plot the histogram using red dots", 
+	parser.add_argument("-o", help = "plot the histogram using red dots", 
 	action = "store_true")
 	parser.add_argument("path", help = "location at which the data is stored")
 	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
@@ -292,7 +292,7 @@ def main():
 	args, hists_dict = parser()
 	
 	if args.function in ["p", "plot"]:
-		if args.o or args.dots:
+		if args.o:
 			plot_graph(hists_dict, use_dots = True)
 		else:
 			plot_graph(hists_dict)
