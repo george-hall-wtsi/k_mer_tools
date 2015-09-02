@@ -1,5 +1,5 @@
 *.pyc
 *.jf
 .goutputstream*
-graph_settings.py
 things_to_add.txt
+graph_settings.py
