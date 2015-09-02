@@ -51,7 +51,7 @@ def calculate_poisson_prob(lambda_vals, weights, c_val):
 	(1 - math.exp(-lambda_vals[i]))) * weights[i]) for i in xrange(len(weights)))
 	
 	
-def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
+def learn_mixture_parameters(original, k_size, num_parameters):
 	
 	"""
 	Attempts to approximate k-mer count data using a mixture model of Poisson distributions. 
@@ -63,9 +63,6 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 	
 	lambdas, mixture_proportions = generate_initial_parameters(original, num_parameters)
 	sample_hist_dict = plotting.generate_sample(original, sample_size = 50000)
-	
-	
-	# Calculating likelihood using current parameters:
 	
 	max_copy_number = lambdas[2] * (len(lambdas) - 1)
 	count_vector = {}
