@@ -170,10 +170,10 @@ def learn_mixture_parameters(original, k_size = 31, num_parameters = 10):
 
 def tests():
 
-	file_path = "/lustre/scratch110/sanger/gh10/jellyfish/yeast-miseq_1_0002.fa"
+	file_path = "/lustre/scratch110/sanger/gh10/Data/yeast-miseq_1_0002_uncorrected_untrimmed.fasta"
 	
 	num_parameters = 6 
-	k_size = 51
+	k_size = 101
 	
 	hist_dict = plotting.calculate_hist_dict(file_path, k_size)
 	
