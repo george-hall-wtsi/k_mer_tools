@@ -206,8 +206,15 @@ def tests():
 	for j in xrange(1, number_iterations):
 		y_list.append(g_size * calculate_poisson_prob(lambdas, 
 		mixture_proportions, j))
-	
 	plt.plot(xrange(1, number_iterations), [y for y in y_list])
+	
+	for curve in xrange(len(lambdas)):
+		print curve
+		y_list = []
+		for j in xrange(1, number_iterations):
+			y_list.append(g_size * calculate_poisson_prob([lambdas[curve]], [mixture_proportions[curve]], j))
+		plt.plot(xrange(1, number_iterations), [y for y in y_list])
+
 	new_hists = plotting.calculate_hist_dict(file_path, 51)
 	plotting.plot_graph({51: new_hists})
 	
