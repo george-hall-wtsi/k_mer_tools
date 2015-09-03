@@ -24,14 +24,13 @@ def generate_initial_parameters(hist_dict, num_parameters):
 	
 	first_mode = plotting.calculate_modes(hist_dict, 1)[0][0]
 	
-	lambda_list = [first_mode / 50]
+	lambda_list = []
 	if num_parameters == 1:
 		print "Warning: Only one lambda value"
 		return lambda_list
 	elif num_parameters > 1: 
-		lambda_list.append(first_mode / 2)
-		for i in xrange(1, num_parameters - 1):
-			lambda_list.append(first_mode * i)
+		for i in xrange(0, num_parameters):
+			lambda_list.append(first_mode * (i + 1) + (40 * (i)))
 	else:
 		raise Exception("num_parameters must be >= 0")
 
@@ -62,7 +61,9 @@ def learn_mixture_parameters(original, k_size, num_parameters):
 	"""
 	
 	lambdas, mixture_proportions = generate_initial_parameters(original, num_parameters)
-	sample_hist_dict = plotting.generate_sample(original, sample_size = 50000)
+	#sample_hist_dict = plotting.generate_sample(original, sample_size = 50000)
+	
+	sample_hist_dict = original
 	
 	max_copy_number = lambdas[2] * (len(lambdas) - 1)
 	count_vector = {}
