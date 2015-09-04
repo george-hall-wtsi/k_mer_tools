@@ -1,5 +1,6 @@
 #!/nfs/users/nfs_g/gh10/Documents/Code/Python/virtualenvs/venv/bin/python
 
+
 import os.path
 import subprocess32
 import random
@@ -223,8 +224,15 @@ def generate_histogram(input_file_path, k_mer_size):
 			histograms")
 		compute_hist_from_fast(input_file_path, k_mer_size)
 		
+	elif extension == "hgram":
+		if str(k_mer_size) == file_name[-len(str(k_mer_size)) - 3:-3]:
+			# If file is already histogram with correct k-mer size
+			pass
+		else:
+			raise Exception("Incompatible k-mer size and .hgram file. ")
+	
 	else:
-		raise Exception("Incorrect file extension.")
+		raise Exception("Unrecognised file extension. ")
 
 
 def calculate_hist_dict(input_file_path, k_size):
