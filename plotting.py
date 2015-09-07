@@ -57,7 +57,7 @@ def find_extrema(hist_dict, window_size, alternate = False):
 			i += 1
 			j += 1
 			k += 1
-		
+
 	return store_dict
 	
 	
@@ -78,6 +78,25 @@ def calculate_modes(hist_dict, n):
 		window_size = window_size - 5
 
 	return modes
+	
+	
+def calculate_mins(hist_dict, n):
+	"""Takes a hist_dict as input and returns a list containing its first n modes. """
+	hist_dict_augmented = pad_data(hist_dict)
+	mins = []
+	window_size = 15
+	
+	while len(mins) < n: # Decrease window size until appropriately small
+		mins = []
+		for x in sorted(find_extrema(hist_dict_augmented, window_size, 
+		alternate = False)['Min'], key = lambda pair: pair[0]):
+			if len(mins) < n:
+				mins.append(x)
+			else:
+				break
+		window_size = window_size - 5
+	print mins
+	return mins
 	
 	
 def pad_data(hist_dict):
@@ -117,8 +136,15 @@ def plot_graph(hists_dict, graph_title = "", use_dots = False):
 			plt.plot(hists_dict[size].keys(), hists_dict[size].values())
 		if use_dots:
 			plt.plot(hists_dict[size].keys(), hists_dict[size].values(), 'o')
+			
+		for minimum in calculate_mins(hists_dict[size], 5):
+			plt.axvline(minimum[0], c = 'r')
+		
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
+	
+	
+
 	
 	plt.xlim(settings['x_lower'], settings['x_upper'])
 	plt.ylim(settings['y_lower'], settings['y_upper'])
