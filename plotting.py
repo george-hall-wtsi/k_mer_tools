@@ -115,7 +115,7 @@ def calculate_mins(hist_dict, n):
 			else:
 				break
 		window_size = window_size - 5
-	print mins
+
 	return mins
 	
 	
