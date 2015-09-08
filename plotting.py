@@ -1,6 +1,26 @@
 #!/nfs/users/nfs_g/gh10/Documents/Code/Python/virtualenvs/venv/bin/python
 
 
+################################################################################
+# Copyright (c) 2015 Genome Research Ltd. 
+# 
+# Author: George Hall gh10@sanger.ac.uk 
+# 
+# This program is free software: you can redistribute it and/or modify it under 
+# the terms of the GNU General Public License as published by the Free Software 
+# Foundation; either version 3 of the License, or (at your option) any later 
+# version. 
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# details. 
+# 
+# You should have received a copy of the GNU General Public License along with 
+# this program. If not, see <http://www.gnu.org/licenses/>. 
+################################################################################
+
+
 import os.path
 import subprocess32
 import random
@@ -57,7 +77,7 @@ def find_extrema(hist_dict, window_size, alternate = False):
 			i += 1
 			j += 1
 			k += 1
-		
+
 	return store_dict
 	
 	
@@ -78,6 +98,25 @@ def calculate_modes(hist_dict, n):
 		window_size = window_size - 5
 
 	return modes
+	
+	
+def calculate_mins(hist_dict, n):
+	"""Takes a hist_dict as input and returns a list containing its first n modes. """
+	hist_dict_augmented = pad_data(hist_dict)
+	mins = []
+	window_size = 15
+	
+	while len(mins) < n: # Decrease window size until appropriately small
+		mins = []
+		for x in sorted(find_extrema(hist_dict_augmented, window_size, 
+		alternate = False)['Min'], key = lambda pair: pair[0]):
+			if len(mins) < n:
+				mins.append(x)
+			else:
+				break
+		window_size = window_size - 5
+	print mins
+	return mins
 	
 	
 def pad_data(hist_dict):
@@ -117,8 +156,15 @@ def plot_graph(hists_dict, graph_title = "", use_dots = False):
 			plt.plot(hists_dict[size].keys(), hists_dict[size].values())
 		if use_dots:
 			plt.plot(hists_dict[size].keys(), hists_dict[size].values(), 'o')
+			
+		for minimum in calculate_mins(hists_dict[size], 5):
+			plt.axvline(minimum[0], c = 'r')
+		
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
+	
+	
+
 	
 	plt.xlim(settings['x_lower'], settings['x_upper'])
 	plt.ylim(settings['y_lower'], settings['y_upper'])
