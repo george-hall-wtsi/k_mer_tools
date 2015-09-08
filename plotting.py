@@ -32,6 +32,20 @@ import matplotlib.pyplot as plt
 import parse_dat_to_histo as parse_data
 import graph_settings
 
+
+def find_repeats(hist_dict):
+	minima = [minimum[0] for minimum in calculate_mins(hist_dict, 5)]
+	maxima = [mode[0] for mode in calculate_modes(hist_dict, 5)[1:]]
+	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])]
+	# This assumes that modes don't occur very close to window boundaries
+	search_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
+
+	for i in search_ranges:
+		for j in xrange(i[0], i[1] + 1):
+			subprocess32.call(['sh', '/lustre/scratch110/sanger/gh10/c_elegans_kmers/generate_occurrence_locations.sh', str(j)])
+
+	return search_ranges
+
 		
 def find_extrema(hist_dict, window_size, alternate = False):
 	
@@ -50,11 +64,11 @@ def find_extrema(hist_dict, window_size, alternate = False):
 			
 			if (all(hist_dict[i - x] < hist_dict[j] > hist_dict[k + x] \
 			for x in xrange(0, (window_size + 1)))):
-				store_dict['Max'].append((j + 1, hist_dict[j]))
+				store_dict['Max'].append((j, hist_dict[j]))
 			
 			if (all(hist_dict[i - x] > hist_dict[j] < hist_dict[k + x] \
 			for x in xrange(0, (window_size + 1)))):
-				store_dict['Min'].append((j + 1, hist_dict[j]))
+				store_dict['Min'].append((j, hist_dict[j]))
 
 			i += 1
 			j += 1
@@ -66,12 +80,12 @@ def find_extrema(hist_dict, window_size, alternate = False):
 		while k < (hist_dict.keys()[-1] - window_size + 1):
 			if prev_max == False and (all(hist_dict[i - x] < hist_dict[j] > hist_dict[k + x] \
 			for x in xrange(0, (window_size + 1)))):
-				store_dict['Max'].append((j + 1,hist_dict[j]))
+				store_dict['Max'].append((j,hist_dict[j]))
 				prev_min, prev_max = False, True
 			
 			elif prev_min == False and (all(hist_dict[i - x] > hist_dict[j] < hist_dict[k + x] \
 			for x in xrange(0, (window_size + 1)))):			
-				store_dict['Min'].append((j + 1,hist_dict[j]))
+				store_dict['Min'].append((j,hist_dict[j]))
 				prev_min, prev_max = True, False
 		
 			i += 1
@@ -115,7 +129,7 @@ def calculate_mins(hist_dict, n):
 			else:
 				break
 		window_size = window_size - 5
-	print mins
+
 	return mins
 	
 	
@@ -321,7 +335,7 @@ def parser():
 	description = "A tool for computing genomic characteristics using k-mers")
 	
 	parser.add_argument("function", help = "specify which function is to be executed", 
-	choices = ["p", "plot", "s", "size"])
+	choices = ["p", "plot", "s", "size", "r", "repeats"])
 	parser.add_argument("-o", help = "plot the histogram using red dots", 
 	action = "store_true")
 	parser.add_argument("path", help = "location at which the data is stored")
@@ -362,6 +376,11 @@ def main():
 		for size in compute_genome_size(hists_dict):
 			print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
 			str(size[0]) + "mers)"
+			
+	if args.function in ["r", "repeats"]:
+		for size in hists_dict.keys():
+			find_repeats(hists_dict[size])
+			print "Finished finding repeats"
 		
 								
 if __name__ == "__main__":
