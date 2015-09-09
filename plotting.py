@@ -34,10 +34,18 @@ import graph_settings
 
 
 def find_repeats(hist_dict):
+	
+	"""
+	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
+	with each peak (i.e. which occur within an interval half the width of the peak wither side
+	of the peak. The genetic location of these words are then stored. 
+	"""
+	
 	minima = [minimum[0] for minimum in calculate_mins(hist_dict, 5)]
 	maxima = [mode[0] for mode in calculate_modes(hist_dict, 5)[1:]]
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])]
-	# This assumes that modes don't occur very close to window boundaries
+	
+	# This assumes that modes don't occur very close to window boundaries:
 	search_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
 
 	for i in search_ranges:
@@ -55,7 +63,7 @@ def find_extrema(hist_dict, window_size, alternate = False):
 	minimum.
 	"""
 	
-	i,j,k = (window_size), (window_size+1), (window_size+2)
+	i,j,k = (window_size), (window_size + 1), (window_size + 2)
 	store_dict = {'Max' : [], 'Min' : []}
 
 	if alternate == False:
@@ -63,11 +71,11 @@ def find_extrema(hist_dict, window_size, alternate = False):
 		while k < (hist_dict.keys()[-1] - window_size + 1):
 			
 			if (all(hist_dict[i - x] < hist_dict[j] > hist_dict[k + x] \
-			for x in xrange(0, (window_size + 1)))):
+			for x in xrange(0, (window_size)))):
 				store_dict['Max'].append((j, hist_dict[j]))
 			
 			if (all(hist_dict[i - x] > hist_dict[j] < hist_dict[k + x] \
-			for x in xrange(0, (window_size + 1)))):
+			for x in xrange(0, (window_size)))):
 				store_dict['Min'].append((j, hist_dict[j]))
 
 			i += 1
@@ -79,12 +87,12 @@ def find_extrema(hist_dict, window_size, alternate = False):
 		
 		while k < (hist_dict.keys()[-1] - window_size + 1):
 			if prev_max == False and (all(hist_dict[i - x] < hist_dict[j] > hist_dict[k + x] \
-			for x in xrange(0, (window_size + 1)))):
+			for x in xrange(0, window_size))):
 				store_dict['Max'].append((j,hist_dict[j]))
 				prev_min, prev_max = False, True
 			
 			elif prev_min == False and (all(hist_dict[i - x] > hist_dict[j] < hist_dict[k + x] \
-			for x in xrange(0, (window_size + 1)))):			
+			for x in xrange(0, window_size))):			
 				store_dict['Min'].append((j,hist_dict[j]))
 				prev_min, prev_max = True, False
 		
@@ -162,18 +170,19 @@ def compute_genome_size(hists_dict):
 	return genome_size_list
 
 
-def plot_graph(hists_dict, graph_title = "", use_dots = False):
+def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
 
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
+		foo = pad_data(hists_dict[size])
 		if not use_dots:
-			plt.plot(hists_dict[size].keys(), hists_dict[size].values())
+			plt.plot(foo.keys(), foo.values())
 		if use_dots:
-			plt.plot(hists_dict[size].keys(), hists_dict[size].values(), 'o')
-			
-		for minimum in calculate_mins(hists_dict[size], 5):
-			plt.axvline(minimum[0], c = 'r')
-		
+			plt.plot(foo.keys(), foo.values(), 'o')
+		if draw_lines:
+			for minimum in calculate_mins(hists_dict[size], 5):
+				plt.axvline(minimum[0], c = 'r')
+				
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
 	
@@ -338,6 +347,8 @@ def parser():
 	choices = ["p", "plot", "s", "size", "r", "repeats"])
 	parser.add_argument("-o", help = "plot the histogram using red dots", 
 	action = "store_true")
+	parser.add_argument("-l", help = "draw lines to split graph into peaks",
+	action = "store_true")
 	parser.add_argument("path", help = "location at which the data is stored")
 	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
 	nargs = '+')
@@ -359,18 +370,11 @@ def parser():
 def main():
 
 	args, hists_dict = parser()
-	
+
 	if args.function in ["p", "plot"]:
-		if args.graph_title:
-			graph_title = args.graph_title
-		else:
-			graph_title = args.path
-			
-		if args.o:
-			plot_graph(hists_dict, graph_title, use_dots = True)
-		else:
-			plot_graph(hists_dict, graph_title)
-		
+		graph_title = args.graph_title or args.path # If user has entered title then set title
+		plot_graph(hists_dict, graph_title, args.o, args.l)
+
 	if args.function in ["s", "size"]:
 		print ""
 		for size in compute_genome_size(hists_dict):
