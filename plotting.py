@@ -46,13 +46,29 @@ def find_repeats(hist_dict):
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])]
 	
 	# This assumes that modes don't occur very close to window boundaries:
-	search_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
+	peak_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
 
-	for i in search_ranges:
-		for j in xrange(i[0], i[1] + 1):
-			subprocess32.call(['sh', '/lustre/scratch110/sanger/gh10/c_elegans_kmers/generate_occurrence_locations.sh', str(j)])
+	# Temporarily messy: fix later!!
+	reference_genome = "/lustre/scratch110/sanger/gh10/c_elegans_kmers/genome-assembly.fasta"
 
-	return search_ranges
+	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges):
+		print "Started processing peak number" , (peak_number + 2)
+		
+		for j in xrange(lower_limit, upper_limit + 1):
+			subprocess32.call(['sh', 
+			'/nfs/users/nfs_g/gh10/Documents/Code/Shell/generate_occurrence_locations.sh', 
+			str(j), reference_genome, 'testestest'])
+		
+		
+		############# BREAKS HERE
+		print "Concatenating peak's k-mer words"
+		subprocess32.call(['cat', '*.tmp.dump.fasta', '>', 'peak_' + str(peak_number + 2) + 'k_mers.fasta'])
+		subprocess32.call(['rm', '*.tmp.dump.fasta'])
+		subprocess32.call(['mv', 'peak_' + str(peak_number + 2) + 'k_mers.fasta', './k_mer_locations_and_words'])
+		
+		print "Finished processing peak number" , (peak_number + 2)
+
+	return 
 
 		
 def find_extrema(hist_dict, window_size, alternate = False):
