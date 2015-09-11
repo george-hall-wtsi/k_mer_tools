@@ -25,6 +25,7 @@ import os.path
 import subprocess32
 import random
 import argparse
+import glob
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -47,9 +48,12 @@ def find_repeats(hist_dict):
 	
 	# This assumes that modes don't occur very close to window boundaries:
 	peak_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
-
+	print peak_ranges
+	for item in enumerate(peak_ranges):
+		print item
+	fdfdfdf = input("")
 	# Temporarily messy: fix later!!
-	reference_genome = "/lustre/scratch110/sanger/gh10/c_elegans_kmers/genome-assembly.fasta"
+	reference_genome = "Escherichiacoli-K-12.fasta"
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges):
 		print "Started processing peak number" , (peak_number + 2)
@@ -59,15 +63,16 @@ def find_repeats(hist_dict):
 			'/nfs/users/nfs_g/gh10/Documents/Code/Shell/generate_occurrence_locations.sh', 
 			str(j), reference_genome, 'testestest'])
 		
-		
 		############# BREAKS HERE
 		print "Concatenating peak's k-mer words"
-		subprocess32.call(['cat', '*.tmp.dump.fasta', '>', 'peak_' + str(peak_number + 2) + 'k_mers.fasta'])
-		subprocess32.call(['rm', '*.tmp.dump.fasta'])
-		subprocess32.call(['mv', 'peak_' + str(peak_number + 2) + 'k_mers.fasta', './k_mer_locations_and_words'])
+		all_tmps = glob.glob('*.tmp.dump.fasta')
+		subprocess32.call(['cat'] + all_tmps, 'peak_' + str(peak_number + 2) + 'k_mers.fasta')
+		print ['cat'] + all_tmps
+		subprocess32.call(['rm'] + all_tmps)
+		subprocess32.call(['mv', 'peak_' + str(peak_number + 2) + 'k_mers.fasta', '/k_mer_locations_and_words'])
 		
 		print "Finished processing peak number" , (peak_number + 2)
-
+		
 	return 
 
 		
@@ -271,7 +276,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
-	("-m " + str(k_size)), "-s 100M", "-t 20", "-C", "-o", "/lustre/scratch110/sanger/gh10/Data/mer_counts.jf" , input_file_path])
+	("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", "-o", "mer_counts.jf" , input_file_path])
 
 	print "Processing histogram for k = " + str(k_size)
 	
