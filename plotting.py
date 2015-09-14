@@ -25,13 +25,18 @@ import os.path
 import subprocess32
 import random
 import argparse
-import glob
 
 import matplotlib
 import matplotlib.pyplot as plt
 
 import parse_dat_to_histo as parse_data
 import graph_settings
+
+
+def simulate_reads(reference, coverage = 500.0, read_length = 100, insert_size = 500):
+	name = reference.split("/")[-1].split(".")[0]
+	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Code/Shell/sim_reads.sh', str(reference), str(float(coverage)), str(read_length), str(insert_size), name])
+	return
 
 
 def find_repeats(hist_dict, file_path):
@@ -160,7 +165,7 @@ def pad_data(hist_dict):
 	this function returns a dict which contains frequency values for all x values (most of 
 	which could well be 0). This allows the data to be used in the correct manner. 
 	"""
-	
+
 	for i in xrange(sorted(hist_dict.keys())[0], sorted(hist_dict.keys())[-1]):
 		hist_dict.setdefault(i,0)	
 	return hist_dict
@@ -194,9 +199,6 @@ def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
 				
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
-	
-	
-
 	
 	plt.xlim(settings['x_lower'], settings['x_upper'])
 	plt.ylim(settings['y_lower'], settings['y_upper'])
@@ -264,7 +266,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
-	("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", "-o", "mer_counts.jf" , input_file_path])
+	("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path])
 
 	print "Processing histogram for k = " + str(k_size)
 	
@@ -274,7 +276,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
 		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", 
-		"/lustre/scratch110/sanger/gh10/Data/mer_counts.jf"], stdout=out_file)
+		"mer_counts.jf"], stdout=out_file)
 	
 	print "Finished for k = " + str(k_size)
 	
@@ -398,6 +400,9 @@ def main():
 			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
 
 		for size in hists_dict.keys():
+			simulate_reads(args.path)
+			hists_dict[size] = calculate_hist_dict("/".join(args.path.split("/")[:-1]) + "/" + args.path.split("/")[-1].split(".")[0]+"-simu-random_both.fastq", size)
+			print hists_dict
 			find_repeats(hists_dict[size], args.path)
 			print "Finished finding repeats"
 
