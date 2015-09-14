@@ -401,6 +401,7 @@ def main():
 
 		for size in hists_dict.keys():
 			simulate_reads(args.path)
+			print ("/".join(args.path.split("/")[:-1]) + "/" + args.path.split("/")[-1].split(".")[0]+"-simu-random_both.fastq")
 			hists_dict[size] = calculate_hist_dict("/".join(args.path.split("/")[:-1]) + "/" + args.path.split("/")[-1].split(".")[0]+"-simu-random_both.fastq", size)
 			print hists_dict
 			find_repeats(hists_dict[size], args.path)
