@@ -34,7 +34,7 @@ import parse_dat_to_histo as parse_data
 import graph_settings
 
 
-def find_repeats(hist_dict):
+def find_repeats(hist_dict, file_path):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
@@ -42,41 +42,30 @@ def find_repeats(hist_dict):
 	of the peak. The genetic location of these words are then stored. 
 	"""
 	
+	file_name = file_path.split("/")[-1].split(".")[0]
 	minima = [minimum[0] for minimum in calculate_mins(hist_dict, 5)]
-	maxima = [mode[0] for mode in calculate_modes(hist_dict, 5)[1:]]
+	maxima = [mode[0] for mode in calculate_modes(hist_dict, 5)]
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])]
-	
+
 	# This assumes that modes don't occur very close to window boundaries:
 	peak_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
-	print peak_ranges
-	for item in enumerate(peak_ranges):
-		print item
-	fdfdfdf = input("")
-	# Temporarily messy: fix later!!
-	reference_genome = "Escherichiacoli-K-12.fasta"
 
-	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges):
-		print "Started processing peak number" , (peak_number + 2)
+	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
+		print "Started processing peak number" , peak_number
 		
 		for j in xrange(lower_limit, upper_limit + 1):
 			subprocess32.call(['sh', 
 			'/nfs/users/nfs_g/gh10/Documents/Code/Shell/generate_occurrence_locations.sh', 
-			str(j), reference_genome, 'testestest'])
+			str(j), file_name])
 		
-		############# BREAKS HERE
 		print "Concatenating peak's k-mer words"
-		all_tmps = glob.glob('*.tmp.dump.fasta')
-		subprocess32.call(['cat'] + all_tmps, 'peak_' + str(peak_number + 2) + 'k_mers.fasta')
-		print ['cat'] + all_tmps
-		subprocess32.call(['rm'] + all_tmps)
-		subprocess32.call(['mv', 'peak_' + str(peak_number + 2) + 'k_mers.fasta', '/k_mer_locations_and_words'])
-		
-		print "Finished processing peak number" , (peak_number + 2)
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/cat_and_merge.sh', str(peak_number)])
+		print "Finished processing peak number" , peak_number
 		
 	return 
 
 		
-def find_extrema(hist_dict, window_size, alternate = False):
+def find_extrema(hist_dict, window_size = 50, alternate = False):
 	
 	"""
 	Returns a dict with 2 keys (max and min) with the values for each of these keys being 
@@ -90,15 +79,14 @@ def find_extrema(hist_dict, window_size, alternate = False):
 	if alternate == False:
 
 		while k < (hist_dict.keys()[-1] - window_size + 1):
-			
-			if (all(hist_dict[i - x] < hist_dict[j] > hist_dict[k + x] \
-			for x in xrange(0, (window_size)))):
+			if (all(hist_dict[i - x] <= hist_dict[j] >= hist_dict[k + x] \
+			for x in xrange(0, window_size))):
 				store_dict['Max'].append((j, hist_dict[j]))
 			
-			if (all(hist_dict[i - x] > hist_dict[j] < hist_dict[k + x] \
-			for x in xrange(0, (window_size)))):
+			if (all(hist_dict[i - x] >= hist_dict[j] <= hist_dict[k + x] \
+			for x in xrange(0, window_size))):
 				store_dict['Min'].append((j, hist_dict[j]))
-
+	
 			i += 1
 			j += 1
 			k += 1
@@ -107,12 +95,12 @@ def find_extrema(hist_dict, window_size, alternate = False):
 		prev_min, prev_max = False, False
 		
 		while k < (hist_dict.keys()[-1] - window_size + 1):
-			if prev_max == False and (all(hist_dict[i - x] < hist_dict[j] > hist_dict[k + x] \
+			if prev_max == False and (all(hist_dict[i - x] <= hist_dict[j] >= hist_dict[k + x] \
 			for x in xrange(0, window_size))):
 				store_dict['Max'].append((j,hist_dict[j]))
 				prev_min, prev_max = False, True
 			
-			elif prev_min == False and (all(hist_dict[i - x] > hist_dict[j] < hist_dict[k + x] \
+			elif prev_min == False and (all(hist_dict[i - x] >= hist_dict[j] <= hist_dict[k + x] \
 			for x in xrange(0, window_size))):			
 				store_dict['Min'].append((j,hist_dict[j]))
 				prev_min, prev_max = True, False
@@ -128,12 +116,12 @@ def calculate_modes(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = pad_data(hist_dict)
 	modes = []
-	window_size = 15
+	window_size = 50 
 	
 	while len(modes) < n: # Decrease window size until appropriately small
 		modes = []
-		for x in reversed(sorted(find_extrema(hist_dict_augmented, window_size, 
-		alternate = False)['Max'], key = lambda pair: pair[1])):
+		for x in sorted(find_extrema(hist_dict_augmented, window_size, 
+		alternate = True)['Max'], key = lambda pair: pair[0]):
 			if len(modes) < n:
 				modes.append(x)
 			else:
@@ -147,12 +135,12 @@ def calculate_mins(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = pad_data(hist_dict)
 	mins = []
-	window_size = 15
-	
+	window_size = 50
+
 	while len(mins) < n: # Decrease window size until appropriately small
 		mins = []
 		for x in sorted(find_extrema(hist_dict_augmented, window_size, 
-		alternate = False)['Min'], key = lambda pair: pair[0]):
+		alternate = True)['Min'], key = lambda pair: pair[0]):
 			if len(mins) < n:
 				mins.append(x)
 			else:
@@ -403,11 +391,16 @@ def main():
 			str(size[0]) + "mers)"
 			
 	if args.function in ["r", "repeats"]:
+
+		extension = ".".join(args.path.split("/")[-1].split(".")[1:])
+
+		if extension not in ["fasta", "fastq"]:
+			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
+
 		for size in hists_dict.keys():
-			find_repeats(hists_dict[size])
+			find_repeats(hists_dict[size], args.path)
 			print "Finished finding repeats"
-		
-								
+
 if __name__ == "__main__":
 	main()
 
