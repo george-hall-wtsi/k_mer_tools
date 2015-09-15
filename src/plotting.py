@@ -63,8 +63,8 @@ def find_repeats(hist_dict, file_path):
 			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/generate_occurrence_locations.sh', str(j), file_name, extension])
 		
 		print "Concatenating peak's k-mer words"
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/cat_and_merge.sh', str(peak_number)])
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/gen_read_files.sh'])
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/cat_and_merge.sh', str(peak_number), file_name])
+	####	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/gen_read_files.sh'])
 		print "Finished processing peak number" , peak_number
 
 	return 
@@ -264,21 +264,20 @@ def compute_hist_from_fast(input_file_path, k_size):
 	print "Reading data for k = " + str(k_size)
 	
 	file_name = input_file_path.split("/")[-1].split(".")[0]
-	mer_count_location = file_name + "_mer_counts.jf"
+	mer_count_file = file_name + "_mer_counts.jf"
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
 	("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path, 
-	'-o', "/lustre/scratch110/sanger/gh10/Data/mer_counts/" + mer_count_location])
+	'-o', "/lustre/scratch110/sanger/gh10/Data/mer_counts/" + mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
 	
 	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer"
 	
-	with open("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
-	file_name + ".hgram","w") as out_file:
+	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", "/lustre/scratch110/sanger/gh10/Data/mer_counts/" + mer_count_location], stdout = out_file)
+		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", "/lustre/scratch110/sanger/gh10/Data/mer_counts/" + mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
 	
@@ -293,8 +292,7 @@ def generate_histogram(input_file_path, k_mer_size):
 	file_name = input_file_path.split("/")[-1].split(".")[0]
 	extension = input_file_path.split("/")[-1].split(".")[-1]
 	
-	if os.path.isfile("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + 
-	file_name + "_" + str(k_mer_size) + "mer.hgram"):
+	if os.path.isfile(file_name + "_" + str(k_mer_size) + "mer.hgram"):
 		return
 	
 	elif extension in ["data","dat"]:
@@ -332,8 +330,7 @@ def calculate_hist_dict(input_file_path, k_size):
 	if extension == "hgram":
 		hgram_name = input_file_path
 	else:
-		hgram_name = "/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + \
-		file_name + ".hgram"
+		hgram_name = file_name + ".hgram"
 		
 	with open(hgram_name, 'r') as hgram_data:
 
@@ -402,7 +399,7 @@ def main():
 			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
 
 		file_name = args.path.split("/")[-1].split(".")[0]
-		if not os.path.isfile("/lustre/scratch110/sanger/gh10/Data/mer_counts/" + file_name + "_mer_counts.jf"):
+		if not os.path.isfile(file_name + "_mer_counts.jf"):
 			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
 
 		for size in hists_dict.keys():

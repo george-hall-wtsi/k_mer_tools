@@ -8,11 +8,17 @@ NUM_OCCS=$1
 NAME=$2
 EXTENSION=$3
 
-echo "Started for "$NUM_OCCS
-/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish dump -L $NUM_OCCS -U $NUM_OCCS -ct "/lustre/scratch110/sanger/gh10/Data/mer_counts/"$NAME"_mer_counts.jf" > "generate_occurrence_locations_"$NUM_OCCS".tmp.dump.fasta"
+if [ ! -f $NAME"_temp" ]; then
+	echo "Creating temp file..."
+	mkdir $NAME"_temp"
+fi
+TEMP_FILE=$NAME"_temp"
 
-cat "generate_occurrence_locations_"$NUM_OCCS".tmp.dump.fasta" | awk '{print ">try.dat " " \n"$1}' > generate_occurrence_locations.tmp.dat
-/software/hpag/icas/0.61/icas/bin/rename_fastq -name kmer_reads -len 10 generate_occurrence_locations.tmp.dat generate_occurrence_locations.tmp.fastq
+echo "Started for "$NUM_OCCS
+/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish dump -L $NUM_OCCS -U $NUM_OCCS -ct $NAME"_mer_counts.jf" > $TEMP_FILE"/generate_occurrence_locations_"$NUM_OCCS".tmp.dump.fasta"
+
+cat $TEMP_FILE"/generate_occurrence_locations_"$NUM_OCCS".tmp.dump.fasta" | awk '{print ">try.dat " " \n"$1}' > $TEMP_FILE"/generate_occurrence_locations.tmp.dat"
+/software/hpag/icas/0.61/icas/bin/rename_fastq -name kmer_reads -len 10 $TEMP_FILE"/generate_occurrence_locations.tmp.dat" $TEMP_FILE"/generate_occurrence_locations.tmp.fastq"
 
 # Generate index if requried (but hopefully will already be there)
 if [ ! -f $NAME"_hash_file"* ]; then
@@ -21,15 +27,8 @@ if [ ! -f $NAME"_hash_file"* ]; then
 	echo "Finished creating hash file"
 fi
 
-
-if [ ! -d "/lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words" ]; then
-	echo "Creating k_mer_locations directory locally"
-	mkdir /lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words
-fi
-
-
-/software/hpag/bin/smalt-0.7.4 map -m 20 -f ssaha -n 4 -O -d -0 $NAME"_hash_file" generate_occurrence_locations.tmp.fastq > $NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
-sed -i "s|$| $NUM_OCCS|" $NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
-rm generate_occurrence_locations.tmp.dat generate_occurrence_locations.tmp.fastq
+/software/hpag/bin/smalt-0.7.4 map -m 20 -f ssaha -n 4 -O -d -0 $NAME"_hash_file" $TEMP_FILE"/generate_occurrence_locations.tmp.fastq" > $TEMP_FILE"/"$NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
+sed -i "s|$| $NUM_OCCS|" $TEMP_FILE"/"$NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
+rm $TEMP_FILE"/generate_occurrence_locations.tmp.dat" $TEMP_FILE"/generate_occurrence_locations.tmp.fastq"
 
 echo "Finished for "$NUM_OCCS

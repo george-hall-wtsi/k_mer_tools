@@ -1,8 +1,16 @@
 #! /bin/bash -x
 
 PEAK_NUM=$1
-cat *.tmp.dump.fasta > "/lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words/peak_"$PEAK_NUM"_k_mers.fasta"
-rm *.tmp.dump.fasta
-cat *.tmp.ssaha > "/lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words/peak_"$PEAK_NUM".ssaha"
-rm *.tmp.ssaha
+NAME=$2
+
+if [ ! -d $NAME"_k_mer_words_locations" ]; then
+	echo "Creating k_mer_locations directory locally"
+	mkdir $NAME"_k_mer_words_locations"
+fi
+
+TEMP_FILE=$NAME"_temp"
+cat $TEMP_FILE"/*.tmp.dump.fasta" > $NAME"_k_mer_locations_and_words/peak_"$PEAK_NUM"_k_mers.fasta"
+rm $TEMP_FILE"/*.tmp.dump.fasta"
+cat $TEMP_FILE"/*.tmp.ssaha" > $NAME"_k_mer_locations_and_words/peak_"$PEAK_NUM".ssaha"
+rm $TEMP_FILE"/*.tmp.ssaha"
 echo "Finished concatenating for peak number "$PEAK_NUM
