@@ -21,8 +21,15 @@ if [ ! -f $NAME"_hash_file"* ]; then
 	echo "Finished creating hash file"
 fi
 
-/software/hpag/bin/smalt-0.7.4 map -m 20 -f ssaha -n 4 -O -d -0 $NAME"_hash_file" generate_occurrence_locations.tmp.fastq > "/lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words/"$NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
-sed -i "s|$| $NUM_OCCS|" "/lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words/"$NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
+
+if [ ! -d "/lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words" ]; then
+	echo "Creating k_mer_locations directory locally"
+	mkdir /lustre/scratch110/sanger/gh10/Data/k_mer_locations_and_words
+fi
+
+
+/software/hpag/bin/smalt-0.7.4 map -m 20 -f ssaha -n 4 -O -d -0 $NAME"_hash_file" generate_occurrence_locations.tmp.fastq > $NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
+sed -i "s|$| $NUM_OCCS|" $NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
 rm generate_occurrence_locations.tmp.dat generate_occurrence_locations.tmp.fastq
 
 echo "Finished for "$NUM_OCCS

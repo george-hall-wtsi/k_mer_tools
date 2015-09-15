@@ -25,17 +25,17 @@ import os.path
 import subprocess32
 import random
 import argparse
+import imp
 
 import matplotlib
 import matplotlib.pyplot as plt
 
-import k_mer_tools.src.scripts.parse_dat_to_histo as parse_data
-import k_mer_tools.src.settings.graph_settings
-
+imp.load_source("parse_data", "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/parse_dat_to_histo.py")
+imp.load_source("graph_settings", "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/settings/graph_settings.py")
 
 def simulate_reads(reference, coverage = 500.0, read_length = 100, insert_size = 500):
 	name = reference.split("/")[-1].split(".")[0]
-	subprocess32.call(['sh', './scripts/sim_reads.sh', str(reference), str(float(coverage)), str(read_length), str(insert_size), name])
+	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', str(reference), str(float(coverage)), str(read_length), str(insert_size), name])
 	return
 
 
@@ -60,11 +60,11 @@ def find_repeats(hist_dict, file_path):
 		print "Started processing peak number" , peak_number
 		
 		for j in xrange(lower_limit, upper_limit + 1):
-			subprocess32.call(['sh', './scripts/generate_occurrence_locations.sh', str(j), file_name, extension])
+			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/generate_occurrence_locations.sh', str(j), file_name, extension])
 		
 		print "Concatenating peak's k-mer words"
-		subprocess32.call(['sh', './scripts/cat_and_merge.sh', str(peak_number)])
-		subprocess32.call(['sh', './scripts/gen_read_files.sh'])
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/cat_and_merge.sh', str(peak_number)])
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/gen_read_files.sh'])
 		print "Finished processing peak number" , peak_number
 
 	return 
