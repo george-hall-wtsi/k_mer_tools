@@ -22,6 +22,7 @@
 
 
 import os.path
+import sys
 import subprocess32
 import random
 import argparse
@@ -30,12 +31,12 @@ import imp
 import matplotlib
 import matplotlib.pyplot as plt
 
-imp.load_source("parse_data", "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/parse_dat_to_histo.py")
-imp.load_source("graph_settings", "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/settings/graph_settings.py")
+import scripts.parse_dat_to_histo as parse_data
+import settings.graph_settings as graph_settings
 
-def simulate_reads(reference, coverage = 500.0, read_length = 100, insert_size = 500):
+def simulate_reads(reference, coverage, read_length, insert_size):
 	name = reference.split("/")[-1].split(".")[0]
-	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', str(reference), str(float(coverage)), str(read_length), str(insert_size), name])
+	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', reference, str(coverage), str(read_length), str(insert_size), name])
 	return
 
 
@@ -352,28 +353,46 @@ def parser():
 	
 	parser = argparse.ArgumentParser(
 	description = "A tool for computing genomic characteristics using k-mers")
+
+	subparsers = parser.add_subparsers(help = "select which function to execute")
+
+	plot_subparser = subparsers.add_parser("plot", help = "plot k-mer spectra")
+	plot_subparser.add_argument("path", type = str, help = "location at which the data is stored")
+	plot_subparser.add_argument("-o", help = "plot the histogram using red dots", action = "store_true")
+	plot_subparser.add_argument("-l", help = "draw lines to split graph into peaks", action = "store_true")
+	plot_subparser.add_argument("--graph_title", help = "specify the title for the graph", type = str, default = "")
+	plot_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	plot_subparser.set_defaults(func = "plot")
+
+	size_subparser = subparsers.add_parser("size", help = "calculate genome size")
+	size_subparser.add_argument("path", type = str, help = "location at which the data is stored")
+	size_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	size_subparser.set_defaults(func = "size")
 	
-	parser.add_argument("function", help = "specify which function is to be executed", 
-	choices = ["p", "plot", "s", "size", "r", "repeats"])
-	parser.add_argument("-o", help = "plot the histogram using red dots", 
-	action = "store_true")
-	parser.add_argument("-l", help = "draw lines to split graph into peaks",
-	action = "store_true")
-	parser.add_argument("path", help = "location at which the data is stored")
-	parser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, 
-	nargs = '+')
-	parser.add_argument("--graph_title", help = "Specify the title for the graph", type = str,
-	default = "")
+	repeats_subparser = subparsers.add_parser("repeats", help = "find repetitive k-mer words, and align repetitive contigs to reference")
+	repeats_subparser.add_argument("path", type = str, help = "location at which the data is stored")
+	repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	repeats_subparser.set_defaults(func = "repeats")
+
+	simulate_subparser = subparsers.add_parser("simulate", help = "simulate random reads from reference genome")
+	simulate_subparser.add_argument("path", type = str, help = "location at which the data is stored")
+	simulate_subparser.add_argument("coverage", type = float, help = "desired simulated coverage")
+	simulate_subparser.add_argument("length", type = int, help = "desired simulated read length")
+	simulate_subparser.add_argument("insert", type = int, help = "desired simulated insert size")
+	simulate_subparser.set_defaults(func = "simulate_reads")
 
 	args = parser.parse_args()
 	
 	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
 	hists_dict = {}
-	
-	for size in args.k_mer_sizes:
-		hists_dict[size] = calculate_hist_dict(args.path, size)
-	
-	
+
+	# Calculate hists_dict if k_mer_words have been supplied
+	try:
+		for size in args.k_mer_sizes:
+			hists_dict[size] = calculate_hist_dict(args.path, size)
+	except AttributeError:
+		pass
+		
 	return (args, hists_dict)
 
 		
@@ -381,17 +400,17 @@ def main():
 
 	args, hists_dict = parser()
 
-	if args.function in ["p", "plot"]:
+	if args.func == "plot":
 		graph_title = args.graph_title or args.path # If user has entered title then set title
 		plot_graph(hists_dict, graph_title, args.o, args.l)
 
-	if args.function in ["s", "size"]:
+	if args.func == "size":
 		print ""
 		for size in compute_genome_size(hists_dict):
 			print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
 			str(size[0]) + "mers)"
 			
-	if args.function in ["r", "repeats"]:
+	if args.func == "repeats":
 
 		extension = ".".join(args.path.split("/")[-1].split(".")[1:])
 
@@ -405,6 +424,12 @@ def main():
 		for size in hists_dict.keys():
 			find_repeats(hists_dict[size], args.path)
 			print "Finished finding repeats"
+
+	if args.func == "simulate_reads":
+		simulate_reads(args.path, args.coverage, args.length, args.insert)
+
+	return
+
 
 if __name__ == "__main__":
 	main()

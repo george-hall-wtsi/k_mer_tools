@@ -12,10 +12,12 @@ cd $NAME"_k_mer_words_locations"
 "k_"$PEAK_NUM"_k_mers.fasta" | awk '{print ">reads \n" $1}' > "peak_"$PEAK_NUM"_k_mers-read.fasta"
 $RENAME_FASTQ_BIN -name kmer-read -len 10 "peak_"$PEAK_NUM"_k_mers-read.fasta" "peak_"$PEAK_NUM"_k_mers-read.fastq"
 
-# Change assembly_config sh.run-soap (maybe make k = 37)
+# Change assembly_config and sh.run-soap (maybe make k = 37)
 
+### USED TO BE SEPERATE FILE CALLED sh.run-soap
 $SOAP_BIN all -s assembly_config -K 33 -k 33 -o k33 -p 20 > k33.all.err
 $GAP_CLOSER_BIN -o k33.fasta -t 20 -b assembly_config -a k33.scafSeq > k33-new.gf.err 
+### END OF OLD sh.run-soap
 
 $RENAME_FASTQ_BIN -name contig -len 100 -num 2 k37.fasta k37-2.fastq
 
