@@ -270,7 +270,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
 	("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path, 
-	'-o', "/lustre/scratch110/sanger/gh10/Data/mer_counts/" + mer_count_file])
+	'-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
 	
@@ -278,7 +278,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	
 	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", "/lustre/scratch110/sanger/gh10/Data/mer_counts/" + mer_count_file], stdout = out_file)
+		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
 	
