@@ -8,7 +8,7 @@ NUM_OCCS=$1
 NAME=$2
 EXTENSION=$3
 
-if [ ! -f $NAME"_temp" ]; then
+if [ ! -d $NAME"_temp" ]; then
 	echo "Creating temp file..."
 	mkdir $NAME"_temp"
 fi
