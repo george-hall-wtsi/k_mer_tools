@@ -21,11 +21,10 @@ cat $TEMP_FILE"/generate_occurrence_locations_"$NUM_OCCS".tmp.dump.fasta" | awk 
 /software/hpag/icas/0.61/icas/bin/rename_fastq -name kmer_reads -len 10 $TEMP_FILE"/generate_occurrence_locations.tmp.dat" $TEMP_FILE"/generate_occurrence_locations.tmp.fastq"
 
 # Generate index if requried (but hopefully will already be there)
-if [ ! -f $NAME"_hash_file"* ]; then
-	echo "Creating hash file..."
-	/software/hpag/bin/smalt-0.7.4 index -k 17 -s 17 $NAME"_hash_file" $NAME"."$EXTENSION
-	echo "Finished creating hash file"
-fi
+for f in $NAME"_hash_file"*; do
+	[ -e "$f" ] && echo "Hash file already exists" || /software/hpag/bin/smalt-0.7.4 index -k 17 -s 17 $NAME"_hash_file" $NAME"."$EXTENSION
+	break
+done;
 
 /software/hpag/bin/smalt-0.7.4 map -m 20 -f ssaha -n 4 -O -d -0 $NAME"_hash_file" $TEMP_FILE"/generate_occurrence_locations.tmp.fastq" > $TEMP_FILE"/"$NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
 sed -i "s|$| $NUM_OCCS|" $TEMP_FILE"/"$NAME"_"$NUM_OCCS"_occs.tmp.ssaha" 
