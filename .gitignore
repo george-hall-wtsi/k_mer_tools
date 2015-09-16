@@ -6,3 +6,4 @@ things_to_add.txt
 graph_settings.py
 pe_tests*.py
 .nfs*
+__init__.py
