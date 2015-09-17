@@ -61,7 +61,10 @@ def find_repeats(hist_dict, file_path, reference_path = ""):
 		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
 		if reference_path != "":
 			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', str(peak_number), file_name, reference_path])
-	####	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/gen_read_files.sh'])
+
+			# Assemble repeats:
+			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
+
 		print "Finished processing peak number" , peak_number
 
 	return 
