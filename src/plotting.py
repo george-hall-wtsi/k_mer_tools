@@ -40,7 +40,7 @@ def simulate_reads(reference, coverage, read_length, insert_size):
 	return
 
 
-def find_repeats(hist_dict, file_path):
+def find_repeats(hist_dict, file_path, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
@@ -48,8 +48,7 @@ def find_repeats(hist_dict, file_path):
 	of the peak. The genetic location of these words are then stored. 
 	"""
 	
-	file_name = file_path.split("/")[-1].split(".")[0]
-	extension = file_path.split("/")[-1].split(".")[-1]
+	file_name = file_path.split("/")[-1]
 	minima = [minimum[0] for minimum in calculate_mins(hist_dict, 5)]
 	maxima = [mode[0] for mode in calculate_modes(hist_dict, 5)]
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])]
@@ -59,12 +58,9 @@ def find_repeats(hist_dict, file_path):
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
 		print "Started processing peak number" , peak_number
-		
-		for j in xrange(lower_limit, upper_limit + 1):
-			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/generate_occurrence_locations.sh', str(j), file_name, extension])
-		
-		print "Concatenating peak's k-mer words"
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/cat_and_merge.sh', str(peak_number), file_name])
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
+		if reference_path != "":
+			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', str(peak_number), file_name, reference_path])
 	####	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/gen_read_files.sh'])
 		print "Finished processing peak number" , peak_number
 
@@ -372,6 +368,7 @@ def parser():
 	repeats_subparser = subparsers.add_parser("repeats", help = "find repetitive k-mer words, and align repetitive contigs to reference")
 	repeats_subparser.add_argument("path", type = str, help = "location at which the data is stored")
 	repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	repeats_subparser.add_argument("-ref", help = "location of reference if reads are simulated", type = str, default = "")
 	repeats_subparser.set_defaults(func = "repeats")
 
 	simulate_subparser = subparsers.add_parser("simulate", help = "simulate random reads from reference genome")
@@ -422,7 +419,7 @@ def main():
 			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
 
 		for size in hists_dict.keys():
-			find_repeats(hists_dict[size], args.path)
+			find_repeats(hists_dict[size], args.path, args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":
