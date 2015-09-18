@@ -36,8 +36,15 @@ import settings.graph_settings as graph_settings
 
 
 def simulate_reads(reference, coverage, read_length, insert_size):
+
+	"""
+	Cuts reads at random locations on a reference genome and assembles them into a .fasta file.
+	"""
+
 	name = reference.split("/")[-1].split(".")[0]
-	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', reference, str(coverage), str(read_length), str(insert_size), name])
+	subprocess32.call(['sh', 
+	'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', 
+	reference, str(coverage), str(read_length), str(insert_size), name])
 
 	return
 
@@ -54,14 +61,30 @@ def update_assembly_config(new_location):
 
 
 def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path):
-	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
+
+	"""
+	Takes a file and computes k-mer words present in the section of the k-mer spectrum graph 
+	between lower_limit and upper_limit. If the optional reference sequence has been provided,
+	these words are then assembled and mapped against the reference.
+	"""
+
+	subprocess32.call(['sh', 
+	'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', 
+	file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
+	
 	if reference_path != "":
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', str(peak_number), file_name, reference_path])
+		subprocess32.call(['sh', 
+		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', 
+		str(peak_number), file_name, reference_path])
 		
 		# Assemble repeats:
-		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + str(peak_number) + "_k_mers-read.fastq\n"
+		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
+		str(peak_number) + "_k_mers-read.fastq\n"
+		
 		update_assembly_config(new_location)
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
+		subprocess32.call(['sh', 
+		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', 
+		os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
 
 	return
 
@@ -70,8 +93,10 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
-	with each peak (i.e. which occur within an interval half the width of the peak wither side
-	of the peak. The genetic location of these words are then stored. 
+	with each peak (i.e. which occur within an interval half the width of the peak either side
+	of the peak. If the optinal reference sequence has been provided, it is shredded and mapped
+	against itself, to discover sequence of length 500 or more which are repetitive. This is used
+	to test the de novo repetition detection. 
 	"""
 
 	file_name = file_path.split("/")[-1]
@@ -89,7 +114,9 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	if reference_path != "":	
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
 		update_assembly_config("q=" + os.path.abspath(reference_path) + "\n")
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/ssaha_shred.sh', os.path.abspath(reference_path), file_name.split(".")[0]])
+		subprocess32.call(['sh', 
+		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/ssaha_shred.sh', 
+		os.path.abspath(reference_path), file_name.split(".")[0]])
 
 	return 
 
@@ -301,7 +328,8 @@ def compute_hist_from_fast(input_file_path, k_size):
 	
 	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "histo", mer_count_file], stdout = out_file)
+		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", 
+		"histo", mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
 	
@@ -342,8 +370,8 @@ def generate_histogram(input_file_path, k_mer_size):
 def calculate_hist_dict(input_file_path, k_size):
 
 	"""
-	Returns dictionary consisting of keys corresponding to occurrences and values corresponding 
-	to frequencies.
+	Returns dictionary consisting of keys corresponding to occurrences and values 
+	corresponding to frequencies.
 	"""
 	
 	generate_histogram(input_file_path, k_size)
@@ -380,39 +408,62 @@ def parser():
 	subparsers = parser.add_subparsers(help = "select which function to execute")
 
 	plot_subparser = subparsers.add_parser("plot", help = "plot k-mer spectra")
-	plot_subparser.add_argument("path", type = str, help = "location at which the data is stored")
-	plot_subparser.add_argument("-o", help = "plot the histogram using red dots", action = "store_true")
-	plot_subparser.add_argument("-l", help = "draw lines to split graph into peaks", action = "store_true")
-	plot_subparser.add_argument("--graph_title", help = "specify the title for the graph", type = str, default = "")
-	plot_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	plot_subparser.add_argument("path", type = str, 
+	help = "location at which the data is stored")
+	plot_subparser.add_argument("-o", 
+	help = "plot the histogram using red dots", action = "store_true")
+	plot_subparser.add_argument("-l", help = "draw lines to split graph into peaks", 
+	action = "store_true")
+	plot_subparser.add_argument("--graph_title", help = "specify the title for the graph", 
+	type = str, default = "")
+	plot_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	
+	type = int, nargs = '+')
 	plot_subparser.set_defaults(func = "plot")
 
 	size_subparser = subparsers.add_parser("size", help = "calculate genome size")
-	size_subparser.add_argument("path", type = str, help = "location at which the data is stored")
-	size_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	size_subparser.add_argument("path", type = str, 
+	help = "location at which the data is stored")
+	size_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	
+	type = int, nargs = '+')
 	size_subparser.set_defaults(func = "size")
 
-	repeats_subparser = subparsers.add_parser("repeats", help = "find repetitive k-mer words, and align repetitive contigs to reference")
-	repeats_subparser.add_argument("path", type = str, help = "location at which the data is stored")
-	repeats_subparser.add_argument("peaks", help = "number of peaks to calculate (first peak calculated will be peak number two)", type = int)
-	repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
-	repeats_subparser.add_argument("-ref", help = "location of reference if reads are simulated", type = str, default = "")
+	repeats_subparser = subparsers.add_parser("repeats", 
+	help = "find repetitive k-mer words, and align repetitive contigs to reference")
+	repeats_subparser.add_argument("path", type = str, 
+	help = "location at which the data is stored")
+	repeats_subparser.add_argument("peaks", 
+	help = "number of peaks to calculate (first peak calculated will be peak number two)", 
+	type = int)
+	repeats_subparser.add_argument("k_mer_sizes", 
+	help = "k-mer sizes to be used",	type = int, nargs = '+')
+	repeats_subparser.add_argument("-ref", 
+	help = "location of reference if reads are simulated", type = str, default = "")
 	repeats_subparser.set_defaults(func = "repeats")
 
-	indiv_repeats_subparser = subparsers.add_parser("indiv_repeats", help = "find repetitive k-mer words, and align repetitive contigs to reference for a specified range")
-	indiv_repeats_subparser.add_argument("path", type = str, help = "location at which the data is stored")
-	indiv_repeats_subparser.add_argument("peak_name", type = str, help = "name of peak to be calulated")
+	indiv_repeats_subparser = subparsers.add_parser("indiv_repeats", 
+	help = "find repetitive k-mer words, and align repetitive contigs to reference for a specified range")
+	indiv_repeats_subparser.add_argument("path", type = str, 
+	help = "location at which the data is stored")
+	indiv_repeats_subparser.add_argument("peak_name", type = str, 
+	help = "name of peak to be calulated")
 	indiv_repeats_subparser.add_argument("l_lim", type = int, help = "lower limit of range")
 	indiv_repeats_subparser.add_argument("u_lim", type = int, help = "upper limit of range")
-	indiv_repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
-	indiv_repeats_subparser.add_argument("-ref", help = "location of reference if reads are simulated", type = str, default = "")
+	indiv_repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used", 
+	type = int, nargs = '+')
+	indiv_repeats_subparser.add_argument("-ref", 
+	help = "location of reference if reads are simulated", type = str, default = "")
 	indiv_repeats_subparser.set_defaults(func = "indiv_repeats")
 
-	simulate_subparser = subparsers.add_parser("simulate", help = "simulate random reads from reference genome")
-	simulate_subparser.add_argument("path", type = str, help = "location at which the data is stored")
-	simulate_subparser.add_argument("coverage", type = float, help = "desired simulated coverage")
-	simulate_subparser.add_argument("length", type = int, help = "desired simulated read length")
-	simulate_subparser.add_argument("insert", type = int, help = "desired simulated insert size")
+	simulate_subparser = subparsers.add_parser("simulate", 
+	help = "simulate random reads from reference genome")
+	simulate_subparser.add_argument("path", type = str, 
+	help = "location at which the data is stored")
+	simulate_subparser.add_argument("coverage", type = float, 
+	help = "desired simulated coverage")
+	simulate_subparser.add_argument("length", type = int, 
+	help = "desired simulated read length")
+	simulate_subparser.add_argument("insert", type = int, 
+	help = "desired simulated insert size")
 	simulate_subparser.set_defaults(func = "simulate_reads")
 
 	args = parser.parse_args()
