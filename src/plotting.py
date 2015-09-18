@@ -34,49 +34,62 @@ import matplotlib.pyplot as plt
 import scripts.parse_dat_to_histo as parse_data
 import settings.graph_settings as graph_settings
 
+
 def simulate_reads(reference, coverage, read_length, insert_size):
 	name = reference.split("/")[-1].split(".")[0]
 	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', reference, str(coverage), str(read_length), str(insert_size), name])
+
 	return
 
 
-def update_assembly_config(peak_number, file_path):
+def update_assembly_config(new_location):
 	config_location = "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assembly_config"
 	with open(config_location, 'r') as assembly_config:
 		lines = assembly_config.readlines()
-	lines[10] = "q=" + file_path.split(".")[0] + "_reads/peak_" + str(peak_number) + "_k_mers-read.fastq\n"
+	lines[10] = new_location
 	with open(config_location, 'w') as assembly_config:
 		assembly_config.writelines(lines)
+
 	return
 
 
-def find_repeats(hist_dict, file_path, reference_path = ""):
+def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path):
+	subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
+	if reference_path != "":
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', str(peak_number), file_name, reference_path])
+		
+		# Assemble repeats:
+		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + str(peak_number) + "_k_mers-read.fastq\n"
+		update_assembly_config(new_location)
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
+
+	return
+
+
+def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
 	with each peak (i.e. which occur within an interval half the width of the peak wither side
 	of the peak. The genetic location of these words are then stored. 
 	"""
-	
-	file_name = file_path.split("/")[-1]
-	minima = [minimum[0] for minimum in calculate_mins(hist_dict, 5)]
-	maxima = [mode[0] for mode in calculate_modes(hist_dict, 5)]
-	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])]
 
+	file_name = file_path.split("/")[-1]
+	minima = [minimum[0] for minimum in calculate_mins(hist_dict, num_peaks_desired + 1)]
+	maxima = [mode[0] for mode in calculate_modes(hist_dict, num_peaks_desired + 1)]
+	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
 	# This assumes that modes don't occur very close to window boundaries:
 	peak_ranges = [((m - (i/4)), (m + (i/4))) for (m, i) in zip(maxima, intervals)]
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
 		print "Started processing peak number" , peak_number
-		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
-		if reference_path != "":
-			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', str(peak_number), file_name, reference_path])
-			
-			# Assemble repeats:
-			update_assembly_config(peak_number, os.path.abspath(file_path))
-			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
-
+		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path)
 		print "Finished processing peak number" , peak_number
+
+	if reference_path != "":	
+		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
+		update_assembly_config("q=" + os.path.abspath(reference_path) + "\n")
+		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/ssaha_shred.sh', os.path.abspath(reference_path), file_name.split(".")[0]])
 
 	return 
 
@@ -378,12 +391,22 @@ def parser():
 	size_subparser.add_argument("path", type = str, help = "location at which the data is stored")
 	size_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
 	size_subparser.set_defaults(func = "size")
-	
+
 	repeats_subparser = subparsers.add_parser("repeats", help = "find repetitive k-mer words, and align repetitive contigs to reference")
 	repeats_subparser.add_argument("path", type = str, help = "location at which the data is stored")
+	repeats_subparser.add_argument("peaks", help = "number of peaks to calculate (first peak calculated will be peak number two)", type = int)
 	repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
 	repeats_subparser.add_argument("-ref", help = "location of reference if reads are simulated", type = str, default = "")
 	repeats_subparser.set_defaults(func = "repeats")
+
+	indiv_repeats_subparser = subparsers.add_parser("indiv_repeats", help = "find repetitive k-mer words, and align repetitive contigs to reference for a specified range")
+	indiv_repeats_subparser.add_argument("path", type = str, help = "location at which the data is stored")
+	indiv_repeats_subparser.add_argument("peak_name", type = str, help = "name of peak to be calulated")
+	indiv_repeats_subparser.add_argument("l_lim", type = int, help = "lower limit of range")
+	indiv_repeats_subparser.add_argument("u_lim", type = int, help = "upper limit of range")
+	indiv_repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	type = int, nargs = '+')
+	indiv_repeats_subparser.add_argument("-ref", help = "location of reference if reads are simulated", type = str, default = "")
+	indiv_repeats_subparser.set_defaults(func = "indiv_repeats")
 
 	simulate_subparser = subparsers.add_parser("simulate", help = "simulate random reads from reference genome")
 	simulate_subparser.add_argument("path", type = str, help = "location at which the data is stored")
@@ -433,7 +456,22 @@ def main():
 			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
 
 		for size in hists_dict.keys():
-			find_repeats(hists_dict[size], args.path, args.ref)
+			find_repeats(hists_dict[size], args.path, args.peaks, args.ref)
+			print "Finished finding repeats"
+
+	if args.func == "indiv_repeats":
+# def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path):
+		extension = ".".join(args.path.split("/")[-1].split(".")[1:])
+
+		if extension not in ["fasta", "fastq"]:
+			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
+
+		file_name = args.path.split("/")[-1].split(".")[0]
+		if not os.path.isfile(file_name + "_mer_counts.jf"):
+			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
+
+		for size in hists_dict.keys():
+			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":
