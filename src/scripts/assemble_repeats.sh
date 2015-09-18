@@ -49,4 +49,7 @@ SHRED_SIZE=500
 $SSAHA_SHRED_BIN -rlength $SHRED_SIZE $REFERENCE $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta"
 $SMALT_BIN map -m 20 -f ssaha -n 4 -O -d 0 $HASH_LOCATION $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta" > "peak_"$PEAK_NUM"_shred_map"
 
+mkdir "peak_"$PEAK_NUM
+find . -type f -maxdepth 1 -exec mv {} ./"peak_"$PEAK_NUM/ \;
+
 cd ..

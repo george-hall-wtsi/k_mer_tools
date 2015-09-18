@@ -40,6 +40,16 @@ def simulate_reads(reference, coverage, read_length, insert_size):
 	return
 
 
+def update_assembly_config(peak_number, file_path):
+	config_location = "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assembly_config"
+	with open(config_location, 'r') as assembly_config:
+		lines = assembly_config.readlines()
+	lines[10] = "q=" + file_path.split(".")[0] + "_reads/peak_" + str(peak_number) + "_k_mers-read.fastq\n"
+	with open(config_location, 'w') as assembly_config:
+		assembly_config.writelines(lines)
+	return
+
+
 def find_repeats(hist_dict, file_path, reference_path = ""):
 	
 	"""
@@ -61,8 +71,9 @@ def find_repeats(hist_dict, file_path, reference_path = ""):
 		subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
 		if reference_path != "":
 			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', str(peak_number), file_name, reference_path])
-
+			
 			# Assemble repeats:
+			update_assembly_config(peak_number, os.path.abspath(file_path))
 			subprocess32.call(['sh', '/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
 
 		print "Finished processing peak number" , peak_number
