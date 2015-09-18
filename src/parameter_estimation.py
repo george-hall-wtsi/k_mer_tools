@@ -32,7 +32,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import scipy.stats
 
-import plotting
+import main
 
 def generate_initial_parameters(hist_dict, num_parameters):	
 
@@ -43,7 +43,7 @@ def generate_initial_parameters(hist_dict, num_parameters):
 	Genome Characteristics and Sequence Quality Without a Reference'. 
 	"""
 	
-	first_mode = plotting.calculate_modes(hist_dict, 1)[0][0]
+	first_mode = main.calculate_modes(hist_dict, 1)[0][0]
 	
 	lambda_list = []
 	if num_parameters == 1:
@@ -82,7 +82,7 @@ def learn_mixture_parameters(original, k_size, num_parameters):
 	"""
 	
 	lambdas, mixture_proportions = generate_initial_parameters(original, num_parameters)
-	#sample_hist_dict = plotting.generate_sample(original, sample_size = 50000)
+	#sample_hist_dict = main.generate_sample(original, sample_size = 50000)
 	
 	sample_hist_dict = original
 	
