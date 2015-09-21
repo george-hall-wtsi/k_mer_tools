@@ -27,6 +27,7 @@ import subprocess32
 import random
 import argparse
 import imp
+import time
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -73,9 +74,9 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
 	
 	if reference_path != "":
-		subprocess32.call(['sh', 
-		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', 
-		str(peak_number), file_name, reference_path])
+		#subprocess32.call(['sh', 
+		#'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', 
+		#str(peak_number), file_name, reference_path])
 		
 		# Assemble repeats:
 		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
@@ -117,6 +118,8 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 		subprocess32.call(['sh', 
 		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/ssaha_shred.sh', 
 		os.path.abspath(reference_path), file_name.split(".")[0]])
+
+		assess_performance.assess(os.path.abspath(file_name))
 
 	return 
 
@@ -172,7 +175,7 @@ def calculate_modes(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = pad_data(hist_dict)
 	modes = []
-	window_size = 50 
+	window_size = 100 
 	
 	while len(modes) < n: # Decrease window size until appropriately small
 		modes = []
@@ -191,7 +194,7 @@ def calculate_mins(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = pad_data(hist_dict)
 	mins = []
-	window_size = 50
+	window_size = 100
 
 	while len(mins) < n: # Decrease window size until appropriately small
 		mins = []
@@ -217,7 +220,7 @@ def pad_data(hist_dict):
 	which could well be 0). This allows the data to be used in the correct manner. 
 	"""
 
-	for i in xrange(sorted(hist_dict.keys())[0], sorted(hist_dict.keys())[-1]):
+	for i in xrange(1, sorted(hist_dict.keys())[-1]):
 		hist_dict.setdefault(i,0)	
 	return hist_dict
 
