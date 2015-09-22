@@ -28,7 +28,7 @@ def assess(file_path):
 				start = first
 
 			prev_end = last
-	print sorted(store_dict[2])
+
 	for key in tmp.keys():
 		print tmp[key] 
 
