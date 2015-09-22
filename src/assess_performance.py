@@ -16,7 +16,12 @@ def assess(file_path):
 			if check_equal(new_data[i:i+n]) and (new_data[i] != new_data[i-1]) and (new_data[i] != new_data[i+n]):
 				store_lst.append(new_data[i])
 
-		store_dict[n] = [(int(repeat.split("00000000_X")[1]), int(repeat.split("00000000_X")[1]) + 100) for repeat in store_lst]
+		store_dict[n] = []
+		for repeat in store_lst:
+			new_suffix = str(int(repeat.split("_X")[1]) + 200)
+			second = repeat[:-len(new_suffix)] + new_suffix
+			store_dict[n].append((repeat, second))
+
 		tmp[n] = []
 
 		start = None
@@ -30,7 +35,9 @@ def assess(file_path):
 			prev_end = last
 
 	for key in tmp.keys():
-		print tmp[key] 
+		print "Count:" , key , tmp[key] , "\n"
 
+	for key in tmp.keys():
+		print key, len(tmp[key])
 
-assess("/lustre/scratch110/sanger/gh10/ecoli/Escherichiacoli-K-12-simu-random_both")
+assess("/lustre/scratch110/sanger/gh10/c_elegans_kmers/c_elegans_ref-simu-random_both")
