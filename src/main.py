@@ -26,7 +26,6 @@ import sys
 import subprocess32
 import random
 import argparse
-import imp
 import time
 
 import matplotlib
@@ -119,7 +118,7 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/ssaha_shred.sh', 
 		os.path.abspath(reference_path), file_name.split(".")[0]])
 
-		assess_performance.assess(os.path.abspath(file_name))
+	############	assess_performance.assess(os.path.abspath(file_name))
 
 	return 
 
@@ -175,7 +174,7 @@ def calculate_modes(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = pad_data(hist_dict)
 	modes = []
-	window_size = 100 
+	window_size = 20 
 	
 	while len(modes) < n: # Decrease window size until appropriately small
 		modes = []
@@ -194,7 +193,7 @@ def calculate_mins(hist_dict, n):
 	"""Takes a hist_dict as input and returns a list containing its first n modes. """
 	hist_dict_augmented = pad_data(hist_dict)
 	mins = []
-	window_size = 100
+	window_size = 20
 
 	while len(mins) < n: # Decrease window size until appropriately small
 		mins = []
