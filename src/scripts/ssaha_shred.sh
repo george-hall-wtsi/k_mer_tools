@@ -13,7 +13,7 @@ cd $WORKING_DIR
 SMALT_BIN="/software/hpag/bin/smalt-0.7.4"
 SSAHA_SHRED_BIN="/nfs/users/nfs_z/zn1/bin/ssaha_shred"
 
-SHRED_SIZE=100
+SHRED_SIZE=200
 $SSAHA_SHRED_BIN -rlength $SHRED_SIZE $REFERENCE $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta"
 $SMALT_BIN map -m 20 -f ssaha -n 4 -O -d 0 $HASH_LOCATION $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta" > "shred_map"
 cd ..
