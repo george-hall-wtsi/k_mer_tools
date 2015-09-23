@@ -3,7 +3,7 @@ def check_equal(lst):
 
 def assess(file_path):
 	file_path = file_path.split(".")[0]
-	with open(file_path + "_reads/" + "shred_map", "r+") as f:
+	with open(file_path + "_reads/" + "outfile", "r+") as f:
 		data = [line.split() for line in f.readlines()]
 
 	new_data = [item[2] for item in data]
