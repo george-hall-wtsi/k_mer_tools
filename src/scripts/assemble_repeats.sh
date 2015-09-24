@@ -33,16 +33,17 @@ cd $WORKING_DIR
 
 # Change assembly_config and sh.run-soap (maybe make k = 37)
 K_SIZE=31
+NUM_PROCESSORS=20
 
 ### USED TO BE SEPERATE FILE CALLED sh.run-soap
-$SOAP_BIN all -s $ASSEMBLY_CONFIG_LOCATION -K $K_SIZE -k $K_SIZE -o "k"$K_SIZE -p 20 > "k"$K_SIZE".all.err"
-$GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t 20 -b $ASSEMBLY_CONFIG_LOCATION -a "k"$K_SIZE".scafSeq" > "k"$K_SIZE"-new.gf.err"
+$SOAP_BIN all -s $ASSEMBLY_CONFIG_LOCATION -K $K_SIZE -k $K_SIZE -o "k"$K_SIZE -p $NUM_PROCESSORS > "k"$K_SIZE".all.err"
+$GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t $NUM_PROCESSORS -b $ASSEMBLY_CONFIG_LOCATION -a "k"$K_SIZE".scafSeq" > "k"$K_SIZE"-new.gf.err"
 ### END OF OLD sh.run-soap
 
 $RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
 #$RENAME_FASTQ_BIN -name contig -len 100 "k"$K_SIZE"-2.fastq" "k"$K_SIZE"-2.fastq"
 
-$SMALT_BIN map -m 20 -f ssaha -n 4 -O -d 0 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+$SMALT_BIN map -m 20 -f ssaha -n $NUM_PROCESSORS -O -d 0 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
 
 mkdir "peak_"$PEAK_NUM
 find . -type f -maxdepth 1 -exec mv {} ./"peak_"$PEAK_NUM/ \;
