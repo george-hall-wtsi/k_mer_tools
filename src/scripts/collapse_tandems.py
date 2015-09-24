@@ -1,9 +1,8 @@
-import subprocess32
+import collections
 
 with open("temp", "r") as f:
 	data = f.readlines()
-temp = [line.split() for line in data]
-data = temp
+data = [line.split() for line in data]
 prev = data[0]
 nxt = data[2]
 new_data = [prev]
@@ -16,41 +15,39 @@ for line in data[1:]:
 		new_data.append(line)
 		prev = line
 
-with open("outfile", "w") as out:	
-	for line in sorted(new_data, key = lambda x: int(x[6])):
-		out.write(" ".join(x for x in line[:3]) + " " + " ".join(str(x).rjust(10) for x in line[3:8]) + " " + " ".join(str(x) for x in line[8:]) + "\n")
+new_data.sort(key = lambda x: int(x[6]))
 
 store_dict = {}
-with open("outfile", "r") as f:
-	for line in f.readlines():
-		line = line.split()
-		try:
-			store_dict[line[2]].append(int(line[7]))
-		except KeyError:
-			store_dict[line[2]] = [int(line[7])]
+for line in new_data:
+	try:
+		store_dict[line[2]].append(int(line[7]))
+	except KeyError:
+		store_dict[line[2]] = [int(line[7])]
 
-	for x in sorted(store_dict.keys()):
-		y = store_dict[x]
-		new_suffix = str(int(x.split("_X")[1]) + 200)
-		second = x[:-len(new_suffix)] + new_suffix
-		try:
-			next_shred = store_dict[second]
-			for i in y:
-				if any(abs(i - j) <= 200 for j in next_shred):
-					y.remove(i)	
+for (k, v) in collections.OrderedDict(sorted(store_dict.items())).iteritems():
+	new_suffix = str(int(k.split("_X")[1]) + 200)
+	follower = k[:-len(new_suffix)] + new_suffix
+	try:
+		next_shred = store_dict[follower]
+		temp = v[:]
+		for i in temp:
+			if any(abs(i - j) <= 200 for j in next_shred):
+				#v.remove(i)	
+				pass
+	except KeyError:
+		pass
 
-		except KeyError:
-			pass
+count_dict = {}
 
+for key in store_dict.keys():
+	try:
+		count_dict[len(store_dict[key])] += 1
+	except KeyError:
+		count_dict[len(store_dict[key])] = 1
 
-	out_dict = {}
-	for i in store_dict.keys():
-		try:
-			out_dict[len(store_dict[i])] += 1
-		except KeyError:
-			out_dict[len(store_dict[i])] = 1
-
-	print out_dict
-
+for k,v in count_dict.items():
+	print k,v
 
 print "Done!"
+
+###	out_list.append(" ".join(x for x in line[:3]) + " " + " ".join(str(x).rjust(10) for x in line[3:8]) + " " + " ".join(str(x) for x in line[8:])) # will need to append new line character eventually
