@@ -104,7 +104,9 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	maxima = [mode[0] for mode in calculate_modes(hist_dict, num_peaks_desired + 1)]
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
 	# This assumes that modes don't occur very close to window boundaries:
-	peak_ranges = [((m - (2 * i/5)), (m + (2 * i/5))) for (m, i) in zip(maxima, intervals)]
+	desired_percentage = 90 # Percentage of peak taken into account
+	window_percentage = desired_percentage / 200
+	peak_ranges = [((m - (window_percentage * i)), (m + (window_percentage * i))) for (m, i) in zip(maxima, intervals)]
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
 		print "Started processing peak number" , peak_number
