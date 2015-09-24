@@ -43,9 +43,9 @@ $GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t $NUM_PROCESSORS -b $ASSEMBLY_CONFIG_LOC
 $RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
 #$RENAME_FASTQ_BIN -name contig -len 100 "k"$K_SIZE"-2.fastq" "k"$K_SIZE"-2.fastq"
 
-$SMALT_BIN map -m 20 -f ssaha -n $NUM_PROCESSORS -O -d 0 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+$SMALT_BIN map -m 20 -f ssaha -n $NUM_PROCESSORS -O -d 10 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
 
 mkdir "peak_"$PEAK_NUM
-find . -type f -maxdepth 1 -exec mv {} ./"peak_"$PEAK_NUM/ \;
+find . -maxdepth 1 -type f -exec mv {} ./"peak_"$PEAK_NUM/ \;
 
 cd ..
