@@ -8,17 +8,18 @@ NAME=$1
 LOWER_LIM=$2
 UPPER_LIM=$3
 PEAK_NUM=$4
+MAIN_LOC=$5
 
 WITHOUT_EXTENSION=${NAME%*.*}
 WITHOUT_EXTENSION=${WITHOUT_EXTENSION##*/}
 
-RENAME_FASTQ_BIN="/software/hpag/icas/0.61/icas/bin/rename_fastq"
+RENAME_FASTQ_BIN=$MAIN_LOC"/../bin/rename_fastq"
 
 if [ ! -d $WITHOUT_EXTENSION"_reads" ]; then
 	mkdir $WITHOUT_EXTENSION"_reads"
 fi
 
-/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish dump -L $LOWER_LIM -U $UPPER_LIM -ct $WITHOUT_EXTENSION"_mer_counts.jf" > $WITHOUT_EXTENSION"_reads/"$PEAK_NUM"_words.tmp.fasta"
+$MAIN_LOC"/../bin/jellyfish" dump -L $LOWER_LIM -U $UPPER_LIM -ct $WITHOUT_EXTENSION"_mer_counts.jf" > $WITHOUT_EXTENSION"_reads/"$PEAK_NUM"_words.tmp.fasta"
 
 cd $WITHOUT_EXTENSION"_reads"
 cat $PEAK_NUM"_words.tmp.fasta" | awk '{print ">reads \n" $1}' > "peak_"$PEAK_NUM"_k_mers-read.fasta"

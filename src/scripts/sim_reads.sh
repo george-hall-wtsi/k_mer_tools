@@ -12,11 +12,12 @@ COVERAGE=$2
 READ_LENGTH=$3
 INSERT_SIZE=$4
 NAME=$5
+MAIN_LOC=$6
 
-~zn1/src/process/screen/linux-64/simulation_reads-randam2 -rlength $READ_LENGTH -cover $COVERAGE -insert $INSERT_SIZE $INPUT_FILE "temp-simu-random.fastq"
+$MAIN_LOC"/../bin/simulation_reads-randam2" -rlength $READ_LENGTH -cover $COVERAGE -insert $INSERT_SIZE $INPUT_FILE "temp-simu-random.fastq"
 cat temp-simu-random.fastq_*.fastq > temp-simu-random.fastq
 rm temp-simu-random.fastq_*.fastq
-~zn1/bin/ssaha_reads -file 22 "temp-simu-random.fastq" $NAME-simu-random_1.fastq $NAME-simu-random_2.fastq
+$MAIN_LOC"/../bin/ssaha_reads" -file 22 "temp-simu-random.fastq" $NAME-simu-random_1.fastq $NAME-simu-random_2.fastq
 rm temp-simu-random.fastq
 cat $NAME-simu-random_1.fastq $NAME-simu-random_2.fastq > $NAME-simu-random_both.fastq
 

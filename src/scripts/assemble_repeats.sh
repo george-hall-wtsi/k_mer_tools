@@ -12,10 +12,11 @@ REPEATS_NAME=${REPEATS_NAME%*.*}
 
 PEAK_NUM=$3
 
-RENAME_FASTQ_BIN="/software/hpag/icas/0.61/icas/bin/rename_fastq"
-SMALT_BIN="/software/hpag/bin/smalt-0.7.4"
-SOAP_BIN="/nfs/users/nfs_z/zn1/src/soap/SOAPdenovo2-bin-LINUX-generic-r240/SOAPdenovo-63mer"
-GAP_CLOSER_BIN="/software/hpag/icas/0.61/icas/bin/GapCloser"
+MAIN_LOC=$4
+RENAME_FASTQ_BIN=$MAIN_LOC"/../bin/rename_fastq"
+SMALT_BIN=$MAIN_LOC"/../bin/smalt-0.7.4"
+SOAP_BIN=$MAIN_LOC"/../bin/SOAPdenovo-63mer"
+GAP_CLOSER_BIN=$MAIN_LOC"/../bin/GapCloser"
 
 WORKING_DIR=$PWD"/"$REPEATS_NAME"_reads"
 
@@ -24,10 +25,10 @@ HASH_LOCATION=$PWD"/"$HASH_NAME
 
 # Generate hash of reference if requried (but hopefully will already be there)
 if [ ! -f $HASH_NAME".smi" ] || [ ! -f $HASH_NAME".sma" ]; then
-	/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/generate_hash.sh $HASH_LOCATION $REFERENCE
+	$MAIN_LOC"/scripts/generate_hash.sh" $HASH_LOCATION $REFERENCE $MAIN_LOC
 fi
 
-ASSEMBLY_CONFIG_LOCATION="/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assembly_config"
+ASSEMBLY_CONFIG_LOCATION=$MAIN_LOC"/scripts/assembly_config"
 
 cd $WORKING_DIR
 

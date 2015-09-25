@@ -43,7 +43,7 @@ def simulate_reads(reference, coverage, read_length, insert_size):
 
 	name = reference.split("/")[-1].split(".")[0]
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/sim_reads.sh"), 
-	reference, str(coverage), str(read_length), str(insert_size), name])
+	reference, str(coverage), str(read_length), str(insert_size), name, os.path.dirname(__file__)])
 
 	return
 
@@ -68,7 +68,7 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	"""
 
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/compute_k_mer_words.sh"), 
-	file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
+	file_name, str(lower_limit), str(upper_limit), str(peak_number), os.path.dirname(__file__)]) 
 	
 	if reference_path != "":
 		# Assemble repeats:
@@ -77,7 +77,8 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 		
 		update_assembly_config(new_location)
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/assemble_repeats.sh"), 
-		os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
+		os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number), 
+		os.path.dirname(__file__)])
 
 	return
 
@@ -111,7 +112,7 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
 		update_assembly_config("q=" + os.path.abspath(reference_path) + "\n")
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/ssaha_shred.sh"), 
-		os.path.abspath(reference_path), file_name.split(".")[0]])
+		os.path.abspath(reference_path), file_name.split(".")[0], os.path.dirname(__file__)])
 
 	return 
 
@@ -313,8 +314,8 @@ def compute_hist_from_fast(input_file_path, k_size):
 	mer_count_file = file_name + "_mer_counts.jf"
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
-	subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", "count", 
-	("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path, 
+	subprocess32.call([os.path.join(os.path.dirname(__file__), "../bin/jellyfish"), 
+	"count", ("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path, 
 	'-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
@@ -323,7 +324,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	
 	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call(["/nfs/users/nfs_g/gh10/src/jellyfish-2.2.3/bin/jellyfish", 
+		subprocess32.call([os.path.join(os.path.dirname(__file__), "../bin/jellyfish"), 
 		"histo", mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
