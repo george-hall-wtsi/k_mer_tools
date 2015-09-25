@@ -1,2 +1,0 @@
-/nfs/users/nfs_z/zn1/src/soap/SOAPdenovo2-bin-LINUX-generic-r240/SOAPdenovo-63mer all -s assembly_config -K 33 -k 33 -o k33 -p 20 > k33.all.err
-~zn1/bin/GapCloser -o k33.fasta -t 20 -b assembly_config -a k33.scafSeq > k33-new.gf.err 
