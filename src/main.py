@@ -42,15 +42,14 @@ def simulate_reads(reference, coverage, read_length, insert_size):
 	"""
 
 	name = reference.split("/")[-1].split(".")[0]
-	subprocess32.call(['sh', 
-	'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/sim_reads.sh', 
+	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/sim_reads.sh"), 
 	reference, str(coverage), str(read_length), str(insert_size), name])
 
 	return
 
 
 def update_assembly_config(new_location):
-	config_location = "/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assembly_config"
+	config_location = os.path.join(os.path.dirname(__file__), "scripts/assembly_config")
 	with open(config_location, 'r') as assembly_config:
 		lines = assembly_config.readlines()
 	lines[10] = new_location
@@ -68,22 +67,16 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	these words are then assembled and mapped against the reference.
 	"""
 
-	subprocess32.call(['sh', 
-	'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/compute_k_mer_words.sh', 
+	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/compute_k_mer_words.sh"), 
 	file_name, str(lower_limit), str(upper_limit), str(peak_number)]) 
 	
 	if reference_path != "":
-		#subprocess32.call(['sh', 
-		#'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/align_sim_to_ref.sh', 
-		#str(peak_number), file_name, reference_path])
-		
 		# Assemble repeats:
 		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
 		str(peak_number) + "_k_mers-read.fastq\n"
 		
 		update_assembly_config(new_location)
-		subprocess32.call(['sh', 
-		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/assemble_repeats.sh', 
+		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/assemble_repeats.sh"), 
 		os.path.abspath(reference_path), os.path.abspath(file_path), str(peak_number)])
 
 	return
@@ -117,11 +110,8 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	if reference_path != "":	
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
 		update_assembly_config("q=" + os.path.abspath(reference_path) + "\n")
-		subprocess32.call(['sh', 
-		'/nfs/users/nfs_g/gh10/Documents/Repositories/k_mer_tools/src/scripts/ssaha_shred.sh', 
+		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/ssaha_shred.sh"), 
 		os.path.abspath(reference_path), file_name.split(".")[0]])
-
-	############	assess_performance.assess(os.path.abspath(file_name))
 
 	return 
 
