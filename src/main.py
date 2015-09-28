@@ -101,18 +101,41 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	desired_percentage = 70 # Percentage of peak from which k-mers are to be extracted
 
 	# This assumes that modes don't occur very close to window boundaries:
-	peak_ranges = [((m - (desired_percentage * i/200)), (m + (desired_percentage * i/200))) for (m, i) in zip(maxima, intervals)]
+	peak_ranges = [((m - (desired_percentage * i/200)), (m + (desired_percentage * i/200))) 
+	for (m, i) in zip(maxima, intervals)]
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
 		print "Started processing peak number" , peak_number
 		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path)
 		print "Finished processing peak number" , peak_number
 
+		if reference_path != "":
+			# Mask repeats found in each peak (replace their loci with Ns on reference fasta):
+			subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/mask_repeats.sh"), 
+			os.path.abspath(reference_path), file_name, str(peak_number), os.path.dirname(__file__)])
+
 	if reference_path != "":	
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
 		update_assembly_config("q=" + os.path.abspath(reference_path) + "\n")
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/ssaha_shred.sh"), 
 		os.path.abspath(reference_path), file_name.split(".")[0], os.path.dirname(__file__)])
+
+		# Mask repeated regions from each mdoe in shredded reads
+		subprocess32.call(['grep', ':00', os.path.abspath(file_path).split(".")[0] + "_reads/shred_map"], 
+		stdout = open(os.path.abspath(file_path).split(".")[0] + "_reads/shred_grep", "w"))
+		
+		with open(os.path.abspath(file_path).split(".")[0] + "_reads/shred_grep", "r") as f:
+			data = [line.split() for line in f.readlines()]
+
+		for n in xrange(2,30):
+			print "Processing repeats occuring %i times" % (n)
+			iCount = 0
+			for i  in xrange(1, len(data) - n):
+				if all(x[2] == data[i][2] for x in data[i+1: i+n]) and (data[i][2] != data[i-1][2]) and (data[i][2] != data[i+n][2]):
+					for line in data[i:i+n]:
+						with open(os.path.abspath(file_path).split(".")[0] + "_reads/Masked Repeats/shred_" + str(n) + "_repeats", "a") as out:
+							out.write(" ".join(x for x in line[:3]) + " " + " ".join(str(x).rjust(10) for x in line[3:8]) + " " + " ".join(str(x) for x in line[8:] ) + "\n")
+		
 
 	return 
 
