@@ -1,15 +1,12 @@
 #! /bin/bash -x
 
-# ref path, file name, peak number, location
-
-CONTIG_MASK_BIN=$4"/../bin/contig_mask"
-
+REFERENCE=$1
 WORKING_DIR=$2
-WORKING_DIR=${WORKING_DIR##*/}
-WORKING_DIR=${WORKING_DIR%*.*}
-WORKING_DIR=$WORKING_DIR"_reads"
+CONTIG_MASK_BIN=$3"/../bin/contig_mask"
+IN_PATH=$4
 
-PEAK_NUM=$3
+IN_NAME=${IN_PATH##*/}
+IN_NAME=${IN_NAME%*.*}
 
 cd $WORKING_DIR
 
@@ -17,8 +14,6 @@ if [ ! -d "Masked Repeats" ]; then
 	mkdir "Masked Repeats"
 fi
 
-cd "peak_"$PEAK_NUM
-$CONTIG_MASK_BIN $1 "peak_"$PEAK_NUM"_map" "peak_"$PEAK_NUM"_mask"
-mv "peak_"$PEAK_NUM"_mask" ../"Masked Repeats"
+$CONTIG_MASK_BIN $REFERENCE $IN_PATH $WORKING_DIR"/Masked Repeats/"$IN_NAME"_mask"
 
-cd ../..
+cd ..

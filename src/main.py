@@ -92,6 +92,12 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 	against itself, to discover sequence of length 500 or more which are repetitive. This is used
 	to test the de novo repetition detection. 
 	"""
+	
+	file_path = os.path.abspath(file_path)
+	if reference_path:
+		reference_path = os.path.abspath(reference_path)
+	src = os.path.dirname(__file__)
+	working_dir = file_path.split(".")[0] + "_reads"
 
 	file_name = file_path.split("/")[-1]
 	minima = [minimum[0] for minimum in calculate_mins(hist_dict, num_peaks_desired + 1)]
@@ -111,31 +117,35 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 
 		if reference_path != "":
 			# Mask repeats found in each peak (replace their loci with Ns on reference fasta):
-			subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/mask_repeats.sh"), 
-			os.path.abspath(reference_path), file_name, str(peak_number), os.path.dirname(__file__)])
+			subprocess32.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
+			reference_path, working_dir, src, (working_dir + "/peak_" + str(peak_number) +"/peak_" + str(peak_number) + "_map")])
 
 	if reference_path != "":	
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
-		update_assembly_config("q=" + os.path.abspath(reference_path) + "\n")
-		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/ssaha_shred.sh"), 
-		os.path.abspath(reference_path), file_name.split(".")[0], os.path.dirname(__file__)])
+		update_assembly_config("q=" + reference_path + "\n")
+		subprocess32.call(['sh', os.path.join(src, "scripts/ssaha_shred.sh"), 
+		reference_path, file_name.split(".")[0], src])
 
 		# Mask repeated regions from each mdoe in shredded reads
-		subprocess32.call(['grep', ':00', os.path.abspath(file_path).split(".")[0] + "_reads/shred_map"], 
-		stdout = open(os.path.abspath(file_path).split(".")[0] + "_reads/shred_grep", "w"))
+		subprocess32.call(['grep', ':00', working_dir + "/shred_map"], 
+		stdout = open(working_dir + "/shred_grep", "w"))
 		
-		with open(os.path.abspath(file_path).split(".")[0] + "_reads/shred_grep", "r") as f:
+		with open(working_dir + "/shred_grep", "r") as f:
 			data = [line.split() for line in f.readlines()]
 
-		for n in xrange(2,30):
+		for n in xrange(2,num_peaks_desired + 1):
 			print "Processing repeats occuring %i times" % (n)
 			iCount = 0
 			for i  in xrange(1, len(data) - n):
 				if all(x[2] == data[i][2] for x in data[i+1: i+n]) and (data[i][2] != data[i-1][2]) and (data[i][2] != data[i+n][2]):
 					for line in data[i:i+n]:
-						with open(os.path.abspath(file_path).split(".")[0] + "_reads/Masked Repeats/shred_" + str(n) + "_repeats", "a") as out:
+						with open(working_dir + "/shred_" + str(n) + "_repeats", "a") as out:
 							out.write(" ".join(x for x in line[:3]) + " " + " ".join(str(x).rjust(10) for x in line[3:8]) + " " + " ".join(str(x) for x in line[8:] ) + "\n")
 		
+			subprocess32.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
+			reference_path, working_dir, src, os.path.abspath(working_dir + "/shred_" + str(n) + "_repeats")])
+			
+
 
 	return 
 
@@ -335,9 +345,10 @@ def compute_hist_from_fast(input_file_path, k_size):
 	
 	file_name = input_file_path.split("/")[-1].split(".")[0]
 	mer_count_file = file_name + "_mer_counts.jf"
+	current_dir = os.path.dirname(__file__)
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
-	subprocess32.call([os.path.join(os.path.dirname(__file__), "../bin/jellyfish"), 
+	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
 	"count", ("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path, 
 	'-o', mer_count_file])
 
@@ -347,7 +358,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	
 	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call([os.path.join(os.path.dirname(__file__), "../bin/jellyfish"), 
+		subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
 		"histo", mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
