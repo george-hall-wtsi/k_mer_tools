@@ -41,7 +41,7 @@ $SOAP_BIN all -s $ASSEMBLY_CONFIG_LOCATION -K $K_SIZE -k $K_SIZE -o "k"$K_SIZE -
 $GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t $NUM_PROCESSORS -b $ASSEMBLY_CONFIG_LOCATION -a "k"$K_SIZE".scafSeq" > "k"$K_SIZE"-new.gf.err"
 ### END OF OLD sh.run-soap
 
-$RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
+$RENAME_FASTQ_BIN -name contig -len 500 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
 #$RENAME_FASTQ_BIN -name contig -len 100 "k"$K_SIZE"-2.fastq" "k"$K_SIZE"-2.fastq"
 
 $SMALT_BIN map -m 20 -f ssaha -n $NUM_PROCESSORS -O -d 10 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
