@@ -126,7 +126,7 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 		subprocess32.call(['sh', os.path.join(src, "scripts/ssaha_shred.sh"), 
 		reference_path, file_name.split(".")[0], src])
 
-		# Mask repeated regions from each mdoe in shredded reads
+		# Mask repeated regions from each mode in shredded reads
 		subprocess32.call(['grep', ':00', working_dir + "/shred_map"], 
 		stdout = open(working_dir + "/shred_grep", "w"))
 		
@@ -144,8 +144,6 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 		
 			subprocess32.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
 			reference_path, working_dir, src, os.path.abspath(working_dir + "/shred_" + str(n) + "_repeats")])
-			
-
 
 	return 
 
