@@ -50,9 +50,11 @@ if [ $ASSEMBLER = "spades" ]; then
 	mv "out-spades/contigs.fasta" "k"$K_SIZE".fasta"
 fi
 
-$RENAME_FASTQ_BIN -name contig -len 500 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
+$RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
 
 $SMALT_BIN map -m 200 -f ssaha -n $NUM_PROCESSORS -O -d 0 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+grep "alignment:S:00" "peak_"$PEAK_NUM"_map" > "grepped"
+mv "grepped" "peak_"$PEAK_NUM"_map"
 
 mkdir "peak_"$PEAK_NUM
 find . -maxdepth 1 -type f -exec mv {} ./"peak_"$PEAK_NUM/ \;

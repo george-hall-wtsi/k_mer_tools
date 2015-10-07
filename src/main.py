@@ -30,6 +30,8 @@ import time
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy
+import scipy.signal as spysig
 
 import scripts.parse_dat_to_histo as parse_data
 import settings.graph_settings as graph_settings
@@ -103,8 +105,8 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_p
 	working_dir = file_path.split(".")[0] + "_reads"
 
 	file_name = file_path.split("/")[-1]
-	minima = [minimum[0] for minimum in calculate_mins(hist_dict, num_peaks_desired + 1)]
-	maxima = [mode[0] for mode in calculate_modes(hist_dict, num_peaks_desired + 1)]
+	minima = [minimum for minimum in find_extrema(hist_dict)['Min'][:num_peaks_desired + 1]]
+	maxima = [mode for mode in find_extrema(hist_dict)['Max'][:num_peaks_desired + 1]]
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
 
 	desired_percentage = 70 # Percentage of peak from which k-mers are to be extracted
@@ -159,95 +161,22 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_p
 	return 
 
 		
-def find_extrema(hist_dict, window_size = 50, alternate = False):
+def find_extrema(hist_dict):
 	
 	"""
 	Returns a dict with 2 keys (max and min) with the values for each of these keys being 
 	tuples which correspond (occurrence, frequency) pairs which are either a maximum or a 
 	minimum.
 	"""
-	
-	i,j,k = (window_size), (window_size + 1), (window_size + 2)
-	store_dict = {'Max' : [], 'Min' : []}
+	window_size = 10 
+	window = numpy.ones(int(window_size))/float(window_size)
+	moving_average = numpy.convolve(hist_dict.values(), window, 'same')
+	smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
 
-	if alternate == False:
-
-		while k < (hist_dict.keys()[-1] - window_size + 1):
-			if (all(hist_dict[i - x] <= hist_dict[j] >= hist_dict[k + x] \
-				for x in xrange(0, window_size))):
-				
-				store_dict['Max'].append((j, hist_dict[j]))
-			
-			if (all(hist_dict[i - x] >= hist_dict[j] <= hist_dict[k + x] \
-				for x in xrange(0, window_size))):
-				
-				store_dict['Min'].append((j, hist_dict[j]))
-	
-			i += 1
-			j += 1
-			k += 1
-			
-	else:	
-		prev_min, prev_max = False, False
-		
-		while k < (hist_dict.keys()[-1] - window_size + 1):
-			if prev_max == False and (all(hist_dict[i - x] <= hist_dict[j] >= hist_dict[k + x] \
-				for x in xrange(0, window_size))):
-				
-				store_dict['Max'].append((j,hist_dict[j]))
-				prev_min, prev_max = False, True
-			
-			elif prev_min == False and (all(hist_dict[i - x] >= hist_dict[j] <= hist_dict[k + x] \
-				for x in xrange(0, window_size))):			
-				
-				store_dict['Min'].append((j,hist_dict[j]))
-				prev_min, prev_max = True, False
-		
-			i += 1
-			j += 1
-			k += 1
+	store_dict = {'Min': spysig.argrelmin(numpy.array(smoothed_data.values()), order = 3)[0].tolist()[1:], 
+		'Max': spysig.argrelmax(numpy.array(smoothed_data.values()), order = 3)[0].tolist()[1:]}
 
 	return store_dict
-	
-	
-def calculate_modes(hist_dict, n):
-	"""Takes a hist_dict as input and returns a list containing its first n modes. """
-	hist_dict_augmented = pad_data(hist_dict)
-	modes = []
-	window_size = 20 
-	
-	while len(modes) < n: # Decrease window size until appropriately small
-		modes = []
-		for x in sorted(find_extrema(hist_dict_augmented, window_size, 
-			alternate = True)['Max'], key = lambda pair: pair[0]):
-			
-			if len(modes) < n:
-				modes.append(x)
-			else:
-				break
-		window_size = window_size - 5
-
-	return modes
-	
-	
-def calculate_mins(hist_dict, n):
-	"""Takes a hist_dict as input and returns a list containing its first n modes. """
-	hist_dict_augmented = pad_data(hist_dict)
-	mins = []
-	window_size = 20
-
-	while len(mins) < n: # Decrease window size until appropriately small
-		mins = []
-		for x in sorted(find_extrema(hist_dict_augmented, window_size, 
-			alternate = True)['Min'], key = lambda pair: pair[0]):
-			
-			if len(mins) < n:
-				mins.append(x)
-			else:
-				break
-		window_size = window_size - 5
-
-	return mins
 	
 	
 def pad_data(hist_dict):
@@ -271,10 +200,10 @@ def compute_genome_size(hists_dict):
 
 	genome_size_list = []
 	for size in hists_dict.keys():
-		modes = calculate_modes(hists_dict[size], 1)
+		mode = find_extrema(hists_dict[size])['Max'][0]
 		
  		# genome_size = total num of k-mer words / first mode of occurences
-		genome_size = compute_num_kmer_words(hists_dict[size]) / modes[0][0]
+		genome_size = compute_num_kmer_words(hists_dict[size]) / mode
 		genome_size_list.append((size, genome_size))
 	
 	return genome_size_list
@@ -290,8 +219,8 @@ def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
 		if use_dots:
 			plt.plot(foo.keys(), foo.values(), 'o')
 		if draw_lines:
-			for minimum in calculate_mins(hists_dict[size], 5):
-				plt.axvline(minimum[0], c = 'r')
+			for minimum in find_extrema(hists_dict[size])['Min'][:5]:
+				plt.axvline(minimum, c = 'r')
 				
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
