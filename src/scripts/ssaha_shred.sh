@@ -16,8 +16,10 @@ cd $WORKING_DIR
 SMALT_BIN=$MAIN_LOC"/../bin/smalt-0.7.4"
 SSAHA_SHRED_BIN=$MAIN_LOC"/../bin/ssaha_shred"
 
+NUM_CPUS=20
+
 SHRED_SIZE=500
 $SSAHA_SHRED_BIN -rlength $SHRED_SIZE $REFERENCE $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta"
-$SMALT_BIN map -m 20 -f ssaha -n 4 -O -d 0 $HASH_LOCATION $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta" > "shred_map"
+$SMALT_BIN map -m 20 -f ssaha -n $NUM_CPUS -O -d 0 $HASH_LOCATION $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta" > "shred_map"
 cd ..
 
