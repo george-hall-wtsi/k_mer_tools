@@ -54,13 +54,14 @@ def update_assembly_config(new_location):
 	with open(config_location, 'r') as assembly_config:
 		lines = assembly_config.readlines()
 	lines[10] = new_location
-	with open(config_location, 'w') as assembly_config:
+	with open(config_location , 'w') as assembly_config:
 		assembly_config.writelines(lines)
 
 	return
 
 
-def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path):
+def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path, 
+	assembler):
 
 	"""
 	Takes a file and computes k-mer words present in the section of the k-mer spectrum graph 
@@ -80,12 +81,12 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 		update_assembly_config(new_location)
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 			"scripts/assemble_repeats.sh"), os.path.abspath(reference_path), 
-			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__)])
+			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__), assembler])
 
 	return
 
 
-def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
+def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
@@ -114,7 +115,8 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, reference_path = ""):
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
 		print "Started processing peak number" , peak_number
-		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path)
+		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path, 
+			assembler)
 		print "Finished processing peak number" , peak_number
 
 		if reference_path != "":
@@ -482,6 +484,9 @@ def parser():
 		help = "k-mer sizes to be used",	type = int, nargs = '+')
 	repeats_subparser.add_argument("-ref", 
 		help = "location of reference if reads are simulated", type = str, default = "")
+	repeats_subparser.add_argument("-assembler", 
+		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, default = "spades", 
+		choices = ["soap", "spades"])
 	repeats_subparser.set_defaults(func = "repeats")
 
 	indiv_repeats_subparser = subparsers.add_parser("indiv_repeats", 
@@ -497,6 +502,9 @@ def parser():
 		type = int, nargs = '+')
 	indiv_repeats_subparser.add_argument("-ref", 
 		help = "location of reference if reads are simulated", type = str, default = "")
+	indiv_repeats_subparser.add_argument("-assembler", 
+		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, default = "spades", 
+		choices = ["soap", "spades"])
 	indiv_repeats_subparser.set_defaults(func = "indiv_repeats")
 
 	simulate_subparser = subparsers.add_parser("simulate", 
@@ -552,7 +560,7 @@ def main():
 			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
 
 		for size in hists_dict.keys():
-			find_repeats(hists_dict[size], args.path, args.peaks, args.ref)
+			find_repeats(hists_dict[size], args.path, args.peaks, args.assembler, args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "indiv_repeats":
@@ -566,7 +574,8 @@ def main():
 			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
 
 		for size in hists_dict.keys():
-			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, args.ref)
+			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
+				args.assembler, args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":
