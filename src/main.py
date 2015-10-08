@@ -113,10 +113,6 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, reference_path = "")
 
 	desired_percentage = 70 # Percentage of peak from which k-mers are to be extracted
 
-	# This assumes that modes don't occur very close to window boundaries:
-	peak_ranges = [((m - (desired_percentage * i/200)), (m + (desired_percentage * i/200))) 
-		for (m, i) in zip(maxima, intervals)]
-
 	peak_ranges = zip(minima, minima[1:])
 	peak_widths = [(j - i) for (i, j) in peak_ranges]
 	new_ranges = []
@@ -466,10 +462,10 @@ def parser():
 		help = "find repetitive k-mer words, and align repetitive contigs to reference")
 	repeats_subparser.add_argument("path", type = str, 
 		help = "location at which the data is stored")
+	repeats_subparser.add_argument("k_mer_size", help = "k-mer sizes to be used",	type = int,
+		nargs = 1)
 	repeats_subparser.add_argument("max_peak", 
 		help = "highest peak number to consider", type = int)
-	repeats_subparser.add_argument("k_mer_sizes", 
-		help = "k-mer sizes to be used",	type = int, nargs = '+')
 	repeats_subparser.add_argument("-ref", 
 		help = "location of reference if reads are simulated", type = str, default = "")
 	repeats_subparser.add_argument("-assembler", 
@@ -486,8 +482,8 @@ def parser():
 		help = "name of peak to be calulated")
 	indiv_repeats_subparser.add_argument("l_lim", type = int, help = "lower limit of range")
 	indiv_repeats_subparser.add_argument("u_lim", type = int, help = "upper limit of range")
-	indiv_repeats_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used", 
-		type = int, nargs = '+')
+	indiv_repeats_subparser.add_argument("k_mer_size", help = "k-mer sizes to be used", 
+		type = int, nargs = 1)
 	indiv_repeats_subparser.add_argument("-ref", 
 		help = "location of reference if reads are simulated", type = str, default = "")
 	indiv_repeats_subparser.add_argument("-assembler", 
