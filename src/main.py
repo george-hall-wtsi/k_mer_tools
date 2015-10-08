@@ -63,7 +63,7 @@ def update_assembly_config(new_location):
 
 
 def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path, 
-	assembler):
+	assembler, k_size):
 
 	"""
 	Takes a file and computes k-mer words present in the section of the k-mer spectrum graph 
@@ -73,7 +73,7 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/compute_k_mer_words.sh"), file_name, str(lower_limit), str(upper_limit), 
-		str(peak_number), os.path.dirname(__file__)]) 
+		str(peak_number), os.path.dirname(__file__), str(k_size)]) 
 	
 	if reference_path != "":
 		# Assemble repeats:
@@ -89,7 +89,7 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	return
 
 
-def find_repeats(hist_dict, file_path, max_peak, assembler, reference_path = ""):
+def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
@@ -125,7 +125,7 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, reference_path = "")
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges, 2):
 		print "Started processing peak number" , peak_number
 		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, 
-			reference_path, assembler)
+			reference_path, assembler, k_size)
 		print "Finished processing peak number" , peak_number
 
 		if reference_path != "":
@@ -336,16 +336,14 @@ def generate_sample(hist_dict, sample_size):
 def compute_hist_from_fast(input_file_path, k_size):
 	
 	"""
-	Uses Jellyfish to count k-mers of length k_size from the file stored at 
-	'input_file_path'. This data is stored as a .hgram file in
-	/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/. 
+	Uses Jellyfish to count k-mers of length k_size from input file. 
 	"""
 
 	print "Computing hgram data for k = " + str(k_size) + " for first time"
 	print "Reading data for k = " + str(k_size)
 	
 	file_name = input_file_path.split("/")[-1].split(".")[0]
-	mer_count_file = file_name + "_mer_counts.jf"
+	mer_count_file = file_name + "_mer_counts_" + str(k_size) + ".jf"
 	current_dir = os.path.dirname(__file__)
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
@@ -514,6 +512,12 @@ def parser():
 			hists_dict[size] = calculate_hist_dict(args.path, size)
 	except AttributeError:
 		pass
+
+	try:
+		size = args.k_mer_size[0]
+		hists_dict[size] = calculate_hist_dict(args.path, size)
+	except AttributeError:
+		pass
 		
 	return (args, hists_dict)
 
@@ -539,12 +543,13 @@ def main():
 		if extension not in ["fasta", "fastq"]:
 			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
 
-		file_name = args.path.split("/")[-1].split(".")[0]
-		if not os.path.isfile(file_name + "_mer_counts.jf"):
-			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
-
 		for size in hists_dict.keys():
-			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, args.ref)
+			print size
+			file_name = args.path.split("/")[-1].split(".")[0]
+			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
+				compute_hist_from_fast(args.path, size)
+			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, size, 
+				args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "indiv_repeats":
@@ -553,13 +558,12 @@ def main():
 		if extension not in ["fasta", "fastq"]:
 			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
 
-		file_name = args.path.split("/")[-1].split(".")[0]
-		if not os.path.isfile(file_name + "_mer_counts.jf"):
-			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
-
 		for size in hists_dict.keys():
+			file_name = args.path.split("/")[-1].split(".")[0]
+			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
+				compute_hist_from_fast(args.path, size)
 			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
-				args.assembler, args.ref)
+				args.assembler, size, args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":
