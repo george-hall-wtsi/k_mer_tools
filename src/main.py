@@ -30,7 +30,7 @@ import time
 
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import scipy.signal as spysig
 
 import scripts.parse_dat_to_histo as parse_data
@@ -83,19 +83,20 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 		update_assembly_config(new_location)
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 			"scripts/assemble_repeats.sh"), os.path.abspath(reference_path), 
-			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__), assembler])
+			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__), 
+			assembler])
 
 	return
 
 
-def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_path = ""):
+def find_repeats(hist_dict, file_path, max_peak, assembler, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
 	with each peak (i.e. which occur within an interval half the width of the peak either side
 	of the peak. If the optinal reference sequence has been provided, it is shredded and mapped
-	against itself, to discover sequence of length 500 or more which are repetitive. This is used
-	to test the de novo repetition detection. 
+	against itself, to discover sequence of length 500 or more which are repetitive. This is 
+	used to test the de novo repetition detection. 
 	"""
 	
 	file_path = os.path.abspath(file_path)
@@ -105,8 +106,9 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_p
 	working_dir = file_path.split(".")[0] + "_reads"
 
 	file_name = file_path.split("/")[-1]
-	minima = [minimum for minimum in find_extrema(hist_dict)['Min'][:num_peaks_desired + 1]]
-	maxima = [mode for mode in find_extrema(hist_dict)['Max'][:num_peaks_desired + 1]]
+	extrema = find_extrema(hist_dict, max_peak)
+	minima = extrema['Min']
+	maxima = extrema['Max']
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
 
 	desired_percentage = 70 # Percentage of peak from which k-mers are to be extracted
@@ -115,10 +117,19 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_p
 	peak_ranges = [((m - (desired_percentage * i/200)), (m + (desired_percentage * i/200))) 
 		for (m, i) in zip(maxima, intervals)]
 
-	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges[1:], 2):
+	peak_ranges = zip(minima, minima[1:])
+	peak_widths = [(j - i) for (i, j) in peak_ranges]
+	new_ranges = []
+	for i in xrange(len(peak_ranges)):
+		new_ranges.append([0, 0])
+		new_ranges[i][0] = peak_ranges[i][0] + (0.1 * peak_widths[i])
+		new_ranges[i][1] = peak_ranges[i][1] - (0.1 * peak_widths[i])
+	peak_ranges = [(int(i), int(j)) for (i, j) in new_ranges][1:]
+
+	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges, 2):
 		print "Started processing peak number" , peak_number
-		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path, 
-			assembler)
+		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, 
+			reference_path, assembler)
 		print "Finished processing peak number" , peak_number
 
 		if reference_path != "":
@@ -141,7 +152,7 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_p
 		with open(working_dir + "/shred_grep", "r") as f:
 			data = [line.split() for line in f.readlines()]
 
-		for n in xrange(2,num_peaks_desired + 1):
+		for n in xrange(2, max_peak + 1):
 			print "Processing repeats occuring %i times" % (n)
 			iCount = 0
 			for i  in xrange(1, len(data) - n):
@@ -160,21 +171,68 @@ def find_repeats(hist_dict, file_path, num_peaks_desired, assembler, reference_p
 
 	return 
 
+
+def check_extrema(extrema_dict):
+
+	"""
+	Checks to see if the values calculated for extrema look reasonable. This means that 
+	each peak is sandwiched betweem two minima, and its peak is correctly labelled. 
+	Does this by checking if (n+1)/n * the nth extremum is within 10% if the 
+	value following it. 
+	"""
+
+	for (key, lst) in extrema_dict.items():
+		if key == 'Min':
+			start = 1
+		elif key == 'Max':
+			start = 0
+		else:
+			raise Exception("Invalid extrema dict")
+		for x in xrange(start, len(lst)-1):
+			n = x + 1 # nth peak
+			factor = ((n + 1.0) / n)
+			if not((0.9 * lst[x+1]) < (factor * lst[x]) < (1.1 * lst[x+1])):
+				return False
+
+	return True
+
 		
-def find_extrema(hist_dict):
+def find_extrema(hist_dict, num_peaks_desired):
 	
 	"""
 	Returns a dict with 2 keys (max and min) with the values for each of these keys being 
 	tuples which correspond (occurrence, frequency) pairs which are either a maximum or a 
 	minimum.
 	"""
-	window_size = 10 
-	window = numpy.ones(int(window_size))/float(window_size)
-	moving_average = numpy.convolve(hist_dict.values(), window, 'same')
-	smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
 
-	store_dict = {'Min': spysig.argrelmin(numpy.array(smoothed_data.values()), order = 3)[0].tolist()[1:], 
-		'Max': spysig.argrelmax(numpy.array(smoothed_data.values()), order = 3)[0].tolist()[1:]}
+	while True:
+		(window_size, order_num) = (random.randint(1, 30), random.randint(1, 15))
+		window = np.ones(int(window_size))/float(window_size)
+		moving_average = np.convolve(hist_dict.values(), window, 'same')
+		smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
+
+		store_dict = {'Min': [], 'Max': []}
+
+		min_list = spysig.argrelextrema(np.array(smoothed_data.values()), np.less_equal, 
+			order = order_num)[0].tolist()[1:]
+		max_list = spysig.argrelextrema(np.array(smoothed_data.values()), np.greater_equal, 
+			order = order_num)[0].tolist()[1:]
+
+		store_dict['Min'].append(min_list[0])
+		iCount = 0
+		min_index = 1
+		max_index = 0
+		while iCount < num_peaks_desired:
+			while max_list[max_index] < store_dict['Min'][-1]:
+				max_index += 1
+			store_dict['Max'].append(max_list[max_index])
+			while min_list[min_index] < store_dict['Max'][-1]:
+				min_index += 1
+			store_dict['Min'].append(min_list[min_index])
+			iCount += 1
+
+		if check_extrema(store_dict):
+			break
 
 	return store_dict
 	
@@ -200,9 +258,9 @@ def compute_genome_size(hists_dict):
 
 	genome_size_list = []
 	for size in hists_dict.keys():
-		mode = find_extrema(hists_dict[size])['Max'][0]
-		
- 		# genome_size = total num of k-mer words / first mode of occurences
+		# Calculate more than the first extremum in order to more accurately estimate the peaks
+		mode = find_extrema(hists_dict[size], 3)['Max'][0]
+ 		# Genome Size = total num of k-mer words / first mode of occurences
 		genome_size = compute_num_kmer_words(hists_dict[size]) / mode
 		genome_size_list.append((size, genome_size))
 	
@@ -219,8 +277,10 @@ def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
 		if use_dots:
 			plt.plot(foo.keys(), foo.values(), 'o')
 		if draw_lines:
-			for minimum in find_extrema(hists_dict[size])['Min'][:5]:
+			for minimum in find_extrema(hists_dict[size], 5)['Min']:
 				plt.axvline(minimum, c = 'r')
+			for maximum in find_extrema(hists_dict[size], 5)['Max']:
+				plt.axvline(maximum, c = 'b')
 				
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
@@ -406,16 +466,15 @@ def parser():
 		help = "find repetitive k-mer words, and align repetitive contigs to reference")
 	repeats_subparser.add_argument("path", type = str, 
 		help = "location at which the data is stored")
-	repeats_subparser.add_argument("peaks", 
-		help = "number of peaks to calculate (first peak calculated will be peak number two)", 
-		type = int)
+	repeats_subparser.add_argument("max_peak", 
+		help = "highest peak number to consider", type = int)
 	repeats_subparser.add_argument("k_mer_sizes", 
 		help = "k-mer sizes to be used",	type = int, nargs = '+')
 	repeats_subparser.add_argument("-ref", 
 		help = "location of reference if reads are simulated", type = str, default = "")
 	repeats_subparser.add_argument("-assembler", 
-		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, default = "spades", 
-		choices = ["soap", "spades"])
+		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, 
+		default = "spades", choices = ["soap", "spades"])
 	repeats_subparser.set_defaults(func = "repeats")
 
 	indiv_repeats_subparser = subparsers.add_parser("indiv_repeats", 
@@ -432,8 +491,8 @@ def parser():
 	indiv_repeats_subparser.add_argument("-ref", 
 		help = "location of reference if reads are simulated", type = str, default = "")
 	indiv_repeats_subparser.add_argument("-assembler", 
-		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, default = "spades", 
-		choices = ["soap", "spades"])
+		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, 
+		default = "spades", choices = ["soap", "spades"])
 	indiv_repeats_subparser.set_defaults(func = "indiv_repeats")
 
 	simulate_subparser = subparsers.add_parser("simulate", 
@@ -489,7 +548,7 @@ def main():
 			compute_hist_from_fast(args.path, args.k_mer_sizes[0])
 
 		for size in hists_dict.keys():
-			find_repeats(hists_dict[size], args.path, args.peaks, args.assembler, args.ref)
+			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, args.ref)
 			print "Finished finding repeats"
 
 	if args.func == "indiv_repeats":
