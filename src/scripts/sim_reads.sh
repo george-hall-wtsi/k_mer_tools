@@ -1,11 +1,9 @@
 #! /bin/bash -x
 
-# Takes .fasta file  and desired output name as inputs and returns two reads, which simulate 100x coverage reads of length 100 in both forward and backward directions.
-# Assumes that original .fasta reads are of length 250
-# Call as script in directory containing .fasta file.
-# Finally combines both reads into one file
-
-# Eventually should make more universal (i.e. user can use different read lengths and coverages etc)
+# Takes .fasta file, desired coverage, read lengthn isnert size, and desired output name as 
+# inputs and returns two reads, which simulate 100x coverage reads of length 100 in both 
+#forward and backward directions. Assumes that original .fasta reads are of length 250
+# Call as script in directory containing .fasta file. Finally combines both reads into one file
 
 INPUT_FILE=$1
 COVERAGE=$2
