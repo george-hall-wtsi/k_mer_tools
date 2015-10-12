@@ -1,23 +1,35 @@
 #! /bin/bash -x
 
-PEAK_NUM=$1
-NAME=$2
-REFERENCE=$3
+REFERENCE=$1
+REFERENCE_NAME=${REFERENCE##*/}
+REFERENCE_NAME=${REFERENCE_NAME%*.*}
+
+REPEATS=$2
+REPEATS_NAME=${REPEATS##*/}
+REPEATS_NAME=${REPEATS_NAME%*.*}
+
+PEAK_NUM=$3 
 MAIN_LOC=$4
 
-REFERENCE=${REFERENCE##*/ }
-echo $REFERENCE
+SMALT_BIN=$MAIN_LOC"/../bin/smalt-0.7.4"
 
-WORKING_DIR=${NAME%*.*}
-WORKING_DIR=${WORKING_DIR##*/}"_reads"
+HASH_NAME=$REFERENCE_NAME".hash"
+HASH_LOCATION=$PWD"/"$HASH_NAME
 
-HASH_LOCATION=${REFERENCE%*.*}".hash"
+WORKING_DIR=$PWD"/"$REPEATS_NAME"_reads"
+
+K_SIZE=31
+NUM_PROCESSORS=20
+
+cd $WORKING_DIR"/peak_"$PEAK_NUM
 
 # Generate hash of reference if requried (but hopefully will already be there)
-if [ ! -f $HASH_LOCATION".smi" ] || [ ! -f $HASH_LOCATION".sma" ]; then
-	$MAIN_LOC"/scripts/generate_hash.sh" $HASH_LOCATION $REFERENCE
+if [ ! -f $HASH_NAME".smi" ] || [ ! -f $HASH_NAME".sma" ]; then
+	$MAIN_LOC"/scripts/generate_hash.sh" $HASH_LOCATION $REFERENCE $MAIN_LOC
 fi
 
-$MAIN_LOC"/../bin/smalt-0.7.4" map -m 20 -f ssaha -n 4 -O -d -0 $HASH_LOCATION $WORKING_DIR"/peak_"$PEAK_NUM"_k_mers-read.fastq" > $WORKING_DIR"/peak_"$PEAK_NUM"_occs.ssaha" 
-sed -i "s|$| $PEAK_NUM|" $WORKING_DIR"/peak_"$PEAK_NUM"_occs.ssaha"  
+$SMALT_BIN map -m 200 -f ssaha -n $NUM_PROCESSORS -O -d 0 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+grep "alignment:S:00" "peak_"$PEAK_NUM"_map" > "grepped"
+mv "grepped" "peak_"$PEAK_NUM"_map"
 
+cd ../..

@@ -8,5 +8,5 @@ asm_flags=3
 rank=1
 pair_num_cutoff=3
 map_len=32
-q=/lustre/scratch110/sanger/zn1/assem/gh10/assembly/peak_2_k_mers-read.fastq
+q=/lustre/scratch110/sanger/gh10/celegans/c_elegans_ref.fasta
 
