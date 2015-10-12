@@ -206,8 +206,11 @@ def find_extrema(hist_dict, num_peaks_desired):
 	minimum.
 	"""
 
+	hist_dict = pad_data(hist_dict)
+
 	while True:
 		(window_size, order_num) = (random.randint(1, 30), random.randint(1, 15))
+
 		window = np.ones(int(window_size))/float(window_size)
 		moving_average = np.convolve(hist_dict.values(), window, 'same')
 		smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
