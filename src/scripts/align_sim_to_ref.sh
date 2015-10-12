@@ -45,7 +45,7 @@ NUM_PROCESSORS=20
 cd $WORKING_DIR"/peak_"$PEAK_NUM
 
 # Generate hash of reference if requried (but hopefully will already be there)
-if [ ! -f $HASH_NAME".smi" ] || [ ! -f $HASH_NAME".sma" ]; then
+if [ ! -f $HASH_LOCATION".smi" ] || [ ! -f $HASH_LOCATION".sma" ]; then
 	$MAIN_LOC"/scripts/generate_hash.sh" $HASH_LOCATION $REFERENCE $MAIN_LOC
 fi
 
