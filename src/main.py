@@ -131,14 +131,16 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 		print "Started processing peak number" , peak_number
 		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, 
 			reference_path, assembler, k_size)
-		print "Finished processing peak number" , peak_number
-
+		
 		if reference_path != "":
-			# Mask repeats found in each peak (replace their loci with Ns on reference fasta):
+			# Mask repeats found in each peak (replace their loci with Xs on a copy of 
+			# the reference fasta)
 			subprocess32.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
 				reference_path, working_dir, src, 
 				(working_dir + "/peak_" + str(peak_number) +"/peak_" + str(peak_number) + \
 				"_map")])
+
+		print "Finished processing peak number" , peak_number
 
 	if reference_path != "":	
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
