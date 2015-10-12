@@ -1,5 +1,26 @@
 #! /bin/bash -x
 
+
+################################################################################
+# Copyright (c) 2015 Genome Research Ltd. 
+# 
+# Author: George Hall gh10@sanger.ac.uk 
+# 
+# This program is free software: you can redistribute it and/or modify it under 
+# the terms of the GNU General Public License as published by the Free Software 
+# Foundation; either version 3 of the License, or (at your option) any later 
+# version. 
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+# details. 
+# 
+# You should have received a copy of the GNU General Public License along with 
+# this program. If not, see <http://www.gnu.org/licenses/>. 
+################################################################################
+
+
 # Takes .fasta file, desired coverage, read lengthn isnert size, and desired output name as 
 # inputs and returns two reads, which simulate 100x coverage reads of length 100 in both 
 #forward and backward directions. Assumes that original .fasta reads are of length 250

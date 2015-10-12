@@ -3,19 +3,21 @@
 
 ################################################################################
 # Copyright (c) 2015 Genome Research Ltd. 
+#  
+# Author: George Hall <gh10@sanger.ac.uk> 
 # 
-# Author: George Hall gh10@sanger.ac.uk 
+# This file is part of K-mer Toolkit. 
 # 
-# This program is free software: you can redistribute it and/or modify it under 
+# K-mer Toolkit is free software: you can redistribute it and/or modify it under 
 # the terms of the GNU General Public License as published by the Free Software 
 # Foundation; either version 3 of the License, or (at your option) any later 
 # version. 
-# 
+#  
 # This program is distributed in the hope that it will be useful, but WITHOUT 
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
 # FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
 # details. 
-# 
+#  
 # You should have received a copy of the GNU General Public License along with 
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 ################################################################################
@@ -74,17 +76,20 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/compute_k_mer_words.sh"), file_name, str(lower_limit), str(upper_limit), 
 		str(peak_number), os.path.dirname(__file__), str(k_size)]) 
+
+	new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
+		str(peak_number) + "_k_mers-read.fastq\n"
+	
+	update_assembly_config(new_location)
+
+	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
+		"scripts/assemble_repeats.sh"), os.path.abspath(file_path), str(peak_number), 
+		os.path.dirname(__file__), assembler])
 	
 	if reference_path != "":
-		# Assemble repeats:
-		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
-			str(peak_number) + "_k_mers-read.fastq\n"
-		
-		update_assembly_config(new_location)
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
-			"scripts/assemble_repeats.sh"), os.path.abspath(reference_path), 
-			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__), 
-			assembler])
+			"scripts/align_sim_to_ref.sh"), os.path.abspath(reference_path), 
+			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__)])
 
 	return
 
@@ -348,7 +353,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-		"count", ("-m " + str(k_size)), "-s 1485776702", "-t 25", "-C", input_file_path, 
+		"count", ("-m " + str(k_size)), "-s 30000000000", "-t 25", "-C", input_file_path, 
 		'-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
@@ -544,7 +549,6 @@ def main():
 			raise Exception("Incorrect file extension: file must be either .fasta or .fastq")
 
 		for size in hists_dict.keys():
-			print size
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
 				compute_hist_from_fast(args.path, size)
