@@ -42,7 +42,7 @@ import settings.graph_settings as graph_settings
 def simulate_reads(reference, coverage, read_length, insert_size):
 
 	"""
-	Cuts reads at random locations on a reference genome and assembles them into a .fasta file.
+	Cuts reads at random locations on a reference genome and stores them in a .fasta file.
 	"""
 
 	name = reference.split("/")[-1].split(".")[0]
@@ -69,8 +69,9 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 
 	"""
 	Takes a file and computes k-mer words present in the section of the k-mer spectrum graph 
-	between lower_limit and upper_limit. If the optional reference sequence has been provided,
-	these words are then assembled and mapped against the reference.
+	between lower_limit and upper_limit. These k-mer words are then assembled into contigs. If 
+	the reference sequence has been provided (i.e. the reads have been simulated from a 
+	reference for error checking), these contigs are mapped against it.
 	"""
 
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
@@ -178,7 +179,9 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 def calculate_ex_score(ex_dict):
 
 	"""
-	Returns a score describing how well the predicted extrema fit the data. 
+	Returns a score describing how well the predicted extrema match with where we expect them 
+	to occur. Basically assesses how periodic the extrema are, and returns lower (that is, 
+	better) scores for those which display (non-trivially) periodic behaviour. 
 	"""
 	
 	diff_list = []
@@ -196,6 +199,13 @@ def calculate_ex_score(ex_dict):
 
 
 def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
+
+	"""
+	Smooths the data using a moving average. Uses Scipy.signals.argrelextrema to then detect
+	which points correspond to extrema. 
+	"""
+	
+
 	window = np.ones(int(window_size))/float(window_size)
 	moving_average = np.convolve(hist_dict.values(), window, 'same')
 	smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
@@ -226,8 +236,8 @@ def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
 def find_extrema(hist_dict, num_peaks_desired):
 	
 	"""
-	Returns a dict with 2 keys (max and min) with the values for each of these keys being 
-	tuples which correspond (occurrence, frequency) pairs which are either a maximum or a 
+	Returns a dict with 2 keys (Max and Min) with the values for each of these keys being 
+	tuples which correspond to (occurrence, frequency) pairs which are either a maximum or a 
 	minimum.
 	"""
 
@@ -385,7 +395,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 
 	# Counts occurences of k-mers of size "k-size" in "file_input":  
 	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-		"count", ("-m " + str(k_size)), "-s 30000000000", "-t 25", "-C", input_file_path, 
+		"count", ("-m " + str(k_size)), "-s 400M", "-t 25", "-C", input_file_path, 
 		'-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
@@ -463,9 +473,8 @@ def calculate_hist_dict(input_file_path, k_size):
 def parser():
 	
 	"""
-	Uses argparse module to create an argument parser. This parser's first argument is the
-	function which the user wishes to execute, and its second argument is the k-mer sizes
-	which the user wishes to use. 
+	Uses argparse module to create an argument parser. Its first argument is the function which 
+	the user wishes to execute.  
 	"""
 	
 	parser = argparse.ArgumentParser(
