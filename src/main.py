@@ -191,13 +191,56 @@ def check_extrema(extrema_dict):
 			start = 0
 		else:
 			raise Exception("Invalid extrema dict")
-		for x in xrange(start, len(lst)-1):
+		for x in xrange(start, len(lst) - 1):
 			n = x + 1 # nth peak
 			factor = ((n + 1.0) / n)
-			if not((0.9 * lst[x+1]) < (factor * lst[x]) < (1.1 * lst[x+1])):
+			if not((0.9 * lst[x + 1]) < (factor * lst[x]) < (1.1 * lst[x + 1])):
 				return False
 
 	return True
+
+
+def calculate_ex_score(ex_dict):
+
+	"""
+	Returns a score describing how well the predicted extrema fit the data. 
+	"""
+	
+	diff_list = []
+
+	for x in xrange(1, len(ex_dict['Max'] - 1)):
+		diff_list.extend(abs(ex_dict['Max'][x] - (ex_dict['Max'][0] * (x + 1))))
+
+	score = sum((float(i) / ex_dict['Max'][0]) for i in diff_list) / len(diff_list)
+	score = score * (ex_dict['Max'][0] - (0.5 * ex_dict['Max'][1]))
+	return abs(score)
+
+def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
+	window = np.ones(int(window_size))/float(window_size)
+	moving_average = np.convolve(hist_dict.values(), window, 'same')
+	smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
+
+	store_dict = {'Min': [], 'Max': []}
+
+	min_list = spysig.argrelextrema(np.array(smoothed_data.values()), np.less_equal, 
+		order = order_num)[0].tolist()[1:]
+	max_list = spysig.argrelextrema(np.array(smoothed_data.values()), np.greater_equal, 
+		order = order_num)[0].tolist()[1:]
+
+	store_dict['Min'].append(min_list[0])
+	iCount = 0
+	min_index = 1
+	max_index = 0
+	while iCount < num_peaks_desired:
+		while max_list[max_index] < store_dict['Min'][-1]:
+			max_index += 1
+		store_dict['Max'].append(max_list[max_index])
+		while min_list[min_index] < store_dict['Max'][-1]:
+			min_index += 1
+		store_dict['Min'].append(min_list[min_index])
+		iCount += 1
+
+	return store_dict
 
 		
 def find_extrema(hist_dict, num_peaks_desired):
@@ -209,40 +252,28 @@ def find_extrema(hist_dict, num_peaks_desired):
 	"""
 
 	hist_dict = pad_data(hist_dict)
+	(window_size, order_num) = (10, 10)
 
-	while True:
-		(window_size, order_num) = (random.randint(1, 30), random.randint(1, 15))
+	while False:
+		score_list = []
+		for (w, o) in [(window_size, order_num), (window_size + 1, order_num), 
+			(window_size, order_num + 5), (window_size - 1, order_num), 
+			(window_size, order_num - 5)]:
+			
+			if (w > 0) and (o > 0):
+				score_list.append(((w, o), 
+					calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
 
-		window = np.ones(int(window_size))/float(window_size)
-		moving_average = np.convolve(hist_dict.values(), window, 'same')
-		smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
-
-		store_dict = {'Min': [], 'Max': []}
-
-		min_list = spysig.argrelextrema(np.array(smoothed_data.values()), np.less_equal, 
-			order = order_num)[0].tolist()[1:]
-		max_list = spysig.argrelextrema(np.array(smoothed_data.values()), np.greater_equal, 
-			order = order_num)[0].tolist()[1:]
-
-		store_dict['Min'].append(min_list[0])
-		iCount = 0
-		min_index = 1
-		max_index = 0
-		while iCount < num_peaks_desired:
-			while max_list[max_index] < store_dict['Min'][-1]:
-				max_index += 1
-			store_dict['Max'].append(max_list[max_index])
-			while min_list[min_index] < store_dict['Max'][-1]:
-				min_index += 1
-			store_dict['Min'].append(min_list[min_index])
-			iCount += 1
-
-		if check_extrema(store_dict):
-			break
-
-	return store_dict
+		sort_scores = sorted(score_list, key = lambda x: -x[1])
+		print sort_scores
+		if sort_scores[0][0] == (window_size, order_num):
+			print window_size, order_num
+			return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+		else:
+			(window_size, order_num) = sort_scores[0][0]
+	return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
 	
-	
+
 def pad_data(hist_dict):
 
 	"""
