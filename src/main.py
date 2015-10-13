@@ -175,31 +175,6 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 	return 
 
 
-def check_extrema(extrema_dict):
-
-	"""
-	Checks to see if the values calculated for extrema look reasonable. This means that 
-	each peak is sandwiched betweem two minima, and its peak is correctly labelled. 
-	Does this by checking if (n+1)/n * the nth extremum is within 10% if the 
-	value following it. 
-	"""
-
-	for (key, lst) in extrema_dict.items():
-		if key == 'Min':
-			start = 1
-		elif key == 'Max':
-			start = 0
-		else:
-			raise Exception("Invalid extrema dict")
-		for x in xrange(start, len(lst) - 1):
-			n = x + 1 # nth peak
-			factor = ((n + 1.0) / n)
-			if not((0.9 * lst[x + 1]) < (factor * lst[x]) < (1.1 * lst[x + 1])):
-				return False
-
-	return True
-
-
 def calculate_ex_score(ex_dict):
 
 	"""
@@ -208,12 +183,17 @@ def calculate_ex_score(ex_dict):
 	
 	diff_list = []
 
-	for x in xrange(1, len(ex_dict['Max'] - 1)):
-		diff_list.extend(abs(ex_dict['Max'][x] - (ex_dict['Max'][0] * (x + 1))))
+	if ex_dict['Max'][0] < 3:
+		return 1000
+
+	for x in xrange(1, len(ex_dict['Max']) - 1):
+		diff_list.append(abs(ex_dict['Max'][x] - (ex_dict['Max'][0] * (x + 1))))
 
 	score = sum((float(i) / ex_dict['Max'][0]) for i in diff_list) / len(diff_list)
-	score = score * (ex_dict['Max'][0] - (0.5 * ex_dict['Max'][1]))
-	return abs(score)
+	score = abs(score * (ex_dict['Max'][0] - (0.5 * ex_dict['Max'][1])))
+
+	return score
+
 
 def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
 	window = np.ones(int(window_size))/float(window_size)
@@ -254,24 +234,37 @@ def find_extrema(hist_dict, num_peaks_desired):
 	hist_dict = pad_data(hist_dict)
 	(window_size, order_num) = (10, 10)
 
-	while False:
+	while True:
 		score_list = []
-		for (w, o) in [(window_size, order_num), (window_size + 1, order_num), 
-			(window_size, order_num + 5), (window_size - 1, order_num), 
+		for (w, o) in [(window_size, order_num), (window_size + 5, order_num), 
+			(window_size, order_num + 5), (window_size - 5, order_num), 
 			(window_size, order_num - 5)]:
-			
+		
 			if (w > 0) and (o > 0):
 				score_list.append(((w, o), 
 					calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
 
-		sort_scores = sorted(score_list, key = lambda x: -x[1])
-		print sort_scores
+		sort_scores = sorted(score_list, key = lambda x: x[1])
 		if sort_scores[0][0] == (window_size, order_num):
-			print window_size, order_num
+
+			while True:
+				score_list = []
+				for (w, o) in [(window_size, order_num), (window_size + 1, order_num), 
+					(window_size, order_num + 1), (window_size - 1, order_num), 
+					(window_size, order_num - 1)]:
+				
+					if (w > 0) and (o > 0):
+						score_list.append(((w, o), 
+							calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
+
+					sort_scores = sorted(score_list, key = lambda x: x[1])
+
+				if sort_scores[0][0] == (window_size, order_num):
+					return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+
 			return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
 		else:
 			(window_size, order_num) = sort_scores[0][0]
-	return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
 	
 
 def pad_data(hist_dict):
@@ -314,10 +307,13 @@ def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
 		if use_dots:
 			plt.plot(foo.keys(), foo.values(), 'o')
 		if draw_lines:
-			for minimum in find_extrema(hists_dict[size], 5)['Min']:
-				plt.axvline(minimum, c = 'r')
-			for maximum in find_extrema(hists_dict[size], 5)['Max']:
-				plt.axvline(maximum, c = 'b')
+			for (extremum, ordinates) in find_extrema(hists_dict[size], 5).items():
+				if extremum == 'Max':
+					for x in ordinates:
+						plt.axvline(x, c = 'b')
+				else:
+					for x in ordinates:
+						plt.axvline(x, c = 'r')
 				
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
