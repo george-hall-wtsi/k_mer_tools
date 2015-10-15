@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 			}
 		}
 		sequence[i] = '\0';
-		if ((str_len_required - 1) >= 1) {
+		if ((str_len_required - 1) >= 100) {
 			printf(">%s_%lu_%lu\n%s\n", loc.name, loc.start, loc.end, sequence);
 		}
 		iCount++;
