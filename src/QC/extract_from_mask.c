@@ -90,6 +90,10 @@ int main(int argc, char** argv) {
 				free(chromo_name);	
 				chromo_name = get_chromo_name(ref);
 			}
+			if ((d = getc(ref)) == EOF) {
+				printf("ERROR: Unexpected end of file\n");
+				exit(EXIT_FAILURE);
+			}
 			base_index = 1;
 		}
 
@@ -126,6 +130,8 @@ int main(int argc, char** argv) {
 			}
 		}
 		sequence[i] = '\0';
+
+		/* Only print sequences of length >= 100 */
 		if ((str_len_required - 1) >= 100) {
 			printf(">%s_%lu_%lu\n%s\n", loc.name, loc.start, loc.end, sequence);
 		}
