@@ -254,7 +254,7 @@ def find_extrema(hist_dict, num_peaks_desired):
 		for (w, o) in [(window_size, order_num), (window_size + 5, order_num), 
 			(window_size, order_num + 5), (window_size - 5, order_num), 
 			(window_size, order_num - 5)]:
-		
+
 			if (w > 0) and (o > 0):
 				score_list.append(((w, o), 
 					calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
@@ -274,8 +274,13 @@ def find_extrema(hist_dict, num_peaks_desired):
 
 					sort_scores = sorted(score_list, key = lambda x: x[1])
 
+				# Current estimate is the best we can do
 				if sort_scores[0][0] == (window_size, order_num):
 					return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+
+				# Perfect score, so return
+				if sort_scores[0][1] == 0.0:
+					return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], num_peaks_desired)
 
 			return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
 		else:
