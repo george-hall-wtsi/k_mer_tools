@@ -161,7 +161,7 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 			data = [line.split() for line in f.readlines()]
 
 		for n in xrange(2, max_peak + 1):
-			print "Processing repeats occuring %i times" % (n)
+			print "Masking repeats occuring " + str(n) + " times"
 			iCount = 0
 			for i  in xrange(1, len(data) - n):
 				if all(x[2] == data[i][2] for x in data[i+1: i+n]) and \
