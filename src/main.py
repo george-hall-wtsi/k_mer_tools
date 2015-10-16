@@ -95,6 +95,23 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	return
 
 
+def calculate_peak_ranges(hist_dict, max_peak):
+	extrema = find_extrema(hist_dict, max_peak)
+	minima = extrema['Min']
+	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
+
+	peak_ranges = zip(minima, minima[1:])
+	peak_widths = [(j - i) for (i, j) in peak_ranges]
+	new_ranges = []
+	for i in xrange(len(peak_ranges)):
+		new_ranges.append([0, 0])
+		new_ranges[i][0] = peak_ranges[i][0] + (0.1 * peak_widths[i])
+		new_ranges[i][1] = peak_ranges[i][1] - (0.1 * peak_widths[i])
+	peak_ranges = [(int(i), int(j)) for (i, j) in new_ranges][1:]
+
+	return peak_ranges
+
+
 def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_path = ""):
 	
 	"""
@@ -112,21 +129,8 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 	working_dir = file_path.split(".")[0] + "_reads"
 
 	file_name = file_path.split("/")[-1]
-	extrema = find_extrema(hist_dict, max_peak)
-	minima = extrema['Min']
-	maxima = extrema['Max']
-	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
 
-	desired_percentage = 70 # Percentage of peak from which k-mers are to be extracted
-
-	peak_ranges = zip(minima, minima[1:])
-	peak_widths = [(j - i) for (i, j) in peak_ranges]
-	new_ranges = []
-	for i in xrange(len(peak_ranges)):
-		new_ranges.append([0, 0])
-		new_ranges[i][0] = peak_ranges[i][0] + (0.1 * peak_widths[i])
-		new_ranges[i][1] = peak_ranges[i][1] - (0.1 * peak_widths[i])
-	peak_ranges = [(int(i), int(j)) for (i, j) in new_ranges][1:]
+	peak_ranges = calculate_peak_ranges(hist_dict, max_peak)
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges, 2):
 		print "Started processing peak number" , peak_number
@@ -186,6 +190,7 @@ def calculate_ex_score(ex_dict):
 	
 	diff_list = []
 
+	# Don't allow trivially 'periodic' extrema (normally very crowded around the origin):
 	if ex_dict['Max'][0] < 3:
 		return 1000
 
@@ -307,7 +312,7 @@ def compute_genome_size(hists_dict):
 	return genome_size_list
 
 
-def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
+def plot_graph(hists_dict, graph_title, use_dots, max_peak = None):
 
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
@@ -316,14 +321,18 @@ def plot_graph(hists_dict, graph_title, use_dots, draw_lines):
 			plt.plot(foo.keys(), foo.values())
 		if use_dots:
 			plt.plot(foo.keys(), foo.values(), 'o')
-		if draw_lines:
-			for (extremum, ordinates) in find_extrema(hists_dict[size], 5).items():
+		if max_peak is not None:
+			for (extremum, ordinates) in find_extrema(hists_dict[size], max_peak).items():
 				if extremum == 'Max':
+					peak_ranges = calculate_peak_ranges(hists_dict[size], max_peak)
+					for (lower, upper) in peak_ranges:
+						plt.axvspan(lower, upper, color = 'green', alpha = 0.5)
 					for x in ordinates:
 						plt.axvline(x, c = 'b')
 				else:
 					for x in ordinates:
 						plt.axvline(x, c = 'r')
+				
 				
 	reload(graph_settings)
 	settings = graph_settings.generate_settings() 
@@ -488,7 +497,7 @@ def parser():
 	plot_subparser.add_argument("-o", 
 		help = "plot the histogram using red dots", action = "store_true")
 	plot_subparser.add_argument("-l", help = "draw lines to split graph into peaks", 
-		action = "store_true")
+		type = int)
 	plot_subparser.add_argument("--graph_title", help = "specify the title for the graph", 
 		type = str, default = "")
 	plot_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	
