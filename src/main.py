@@ -205,7 +205,7 @@ def calculate_ex_score(ex_dict):
 		if (peak_range[0] < mx < peak_range[1]) == False:
 			return float("inf")
 
-	for x in xrange(1, len(ex_dict['Max']) - 1):
+	for x in xrange(1, len(ex_dict['Max'])):
 		diff_list.append(abs(ex_dict['Max'][x] - (ex_dict['Max'][0] * (x + 1))))
 
 	score = sum((float(i) / ex_dict['Max'][0]) for i in diff_list) / len(diff_list)
