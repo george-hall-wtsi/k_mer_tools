@@ -95,8 +95,7 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	return
 
 
-def calculate_peak_ranges(hist_dict, max_peak):
-	extrema = find_extrema(hist_dict, max_peak)
+def ranges_from_extrema(extrema):
 	minima = extrema['Min']
 	intervals = [(y - x) for (x, y) in zip([m for m in minima], [m for m in minima[1:]])] 
 
@@ -110,6 +109,12 @@ def calculate_peak_ranges(hist_dict, max_peak):
 	peak_ranges = [(int(i), int(j)) for (i, j) in new_ranges][1:]
 
 	return peak_ranges
+
+
+def calculate_peak_ranges(hist_dict, max_peak):
+	extrema = find_extrema(hist_dict, max_peak)
+	
+	return ranges_from_extrema(extrema)
 
 
 def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_path = ""):
@@ -192,19 +197,27 @@ def calculate_ex_score(ex_dict):
 
 	# Don't allow trivially 'periodic' extrema (normally very crowded around the origin):
 	if ex_dict['Max'][0] < 3:
-		return 1000
+		return float("inf")
+
+	# Check that max is within peak range	
+	peak_ranges = ranges_from_extrema(ex_dict)
+	for (mx, peak_range) in zip(ex_dict['Max'][1:], peak_ranges):
+		if (peak_range[0] < mx < peak_range[1]) == False:
+			return float("inf")
 
 	for x in xrange(1, len(ex_dict['Max']) - 1):
 		diff_list.append(abs(ex_dict['Max'][x] - (ex_dict['Max'][0] * (x + 1))))
 
 	score = sum((float(i) / ex_dict['Max'][0]) for i in diff_list) / len(diff_list)
 	score = abs(score * (ex_dict['Max'][0] - (0.5 * ex_dict['Max'][1])))
+	average_width = (sum((y - x) for (x, y) in zip(ex_dict['Min'], ex_dict['Min'][1:])) / float(len(ex_dict['Min']) - 1))
+	score = score * abs((ex_dict['Min'][1] - ex_dict['Min'][0]) - average_width)
 
 	return score
 
 
 def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
-
+ 
 	"""
 	Smooths the data using a moving average. Uses Scipy.signals.argrelextrema to then detect
 	which points correspond to extrema. 
@@ -260,6 +273,7 @@ def find_extrema(hist_dict, num_peaks_desired):
 					calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
 
 		sort_scores = sorted(score_list, key = lambda x: x[1])
+
 		if sort_scores[0][0] == (window_size, order_num):
 
 			while True:
@@ -272,21 +286,28 @@ def find_extrema(hist_dict, num_peaks_desired):
 						score_list.append(((w, o), 
 							calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
 
-					sort_scores = sorted(score_list, key = lambda x: x[1])
+				sort_scores = sorted(score_list, key = lambda x: x[1])
 
 				# Current estimate is the best we can do
 				if sort_scores[0][0] == (window_size, order_num):
 					return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
 
 				# Perfect score, so return
-				if sort_scores[0][1] == 0.0:
+				elif sort_scores[0][1] == 0.0:
 					return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], num_peaks_desired)
 
+				else:
+					(window_size, order_num) = sort_scores[0][0]
+
 			return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+
+		elif sort_scores[0][1] == 0.0:
+			return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], num_peaks_desired)
+
 		else:
 			(window_size, order_num) = sort_scores[0][0]
-	
 
+		
 def pad_data(hist_dict):
 
 	"""
