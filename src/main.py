@@ -210,7 +210,8 @@ def calculate_ex_score(ex_dict):
 
 	score = sum((float(i) / ex_dict['Max'][0]) for i in diff_list) / len(diff_list)
 	score = abs(score * (ex_dict['Max'][0] - (0.5 * ex_dict['Max'][1])))
-	average_width = (sum((y - x) for (x, y) in zip(ex_dict['Min'], ex_dict['Min'][1:])) / float(len(ex_dict['Min']) - 1))
+	average_width = (sum((y - x) for (x, y) in zip(ex_dict['Min'], ex_dict['Min'][1:])) \
+		/ float(len(ex_dict['Min']) - 1))
 	score = score * abs((ex_dict['Min'][1] - ex_dict['Min'][0]) - average_width)
 
 	return score
@@ -223,7 +224,6 @@ def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
 	which points correspond to extrema. 
 	"""
 	
-
 	window = np.ones(int(window_size))/float(window_size)
 	moving_average = np.convolve(hist_dict.values(), window, 'same')
 	smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
@@ -239,13 +239,24 @@ def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
 	iCount = 0
 	min_index = 1
 	max_index = 0
+	
 	while iCount < num_peaks_desired:
+		
+		if max_index >= len(max_list) or min_index >= len(min_list):
+			break
+		
 		while max_list[max_index] < store_dict['Min'][-1]:
 			max_index += 1
-		store_dict['Max'].append(max_list[max_index])
+			if max_index == len(max_list):
+				break
+		else:
+			store_dict['Max'].append(max_list[max_index])
 		while min_list[min_index] < store_dict['Max'][-1]:
 			min_index += 1
-		store_dict['Min'].append(min_list[min_index])
+			if min_index == len(max_list):
+				break
+		else:
+			store_dict['Min'].append(min_list[min_index])
 		iCount += 1
 
 	return store_dict
@@ -264,9 +275,9 @@ def find_extrema(hist_dict, num_peaks_desired):
 
 	while True:
 		score_list = []
-		for (w, o) in [(window_size, order_num), (window_size + 5, order_num), 
-			(window_size, order_num + 5), (window_size - 5, order_num), 
-			(window_size, order_num - 5)]:
+		for (w, o) in [(window_size, order_num), (window_size + 1, order_num), 
+			(window_size, order_num + 1), (window_size - 1, order_num), 
+			(window_size, order_num - 1)]:
 
 			if (w > 0) and (o > 0):
 				score_list.append(((w, o), 
@@ -274,35 +285,29 @@ def find_extrema(hist_dict, num_peaks_desired):
 
 		sort_scores = sorted(score_list, key = lambda x: x[1])
 
-		if sort_scores[0][0] == (window_size, order_num):
+		if sort_scores[0][1] == float("inf"):
+			(window_size, order_num) = (window_size + 10, order_num + 10)
+			continue
+		#raise Exception("Could not find suitable extrema")
 
-			while True:
-				score_list = []
-				for (w, o) in [(window_size, order_num), (window_size + 1, order_num), 
-					(window_size, order_num + 1), (window_size - 1, order_num), 
-					(window_size, order_num - 1)]:
-				
-					if (w > 0) and (o > 0):
-						score_list.append(((w, o), 
-							calculate_ex_score(estimate_extrema(hist_dict, w, o, num_peaks_desired))))
+		elif sort_scores[0][0] == (window_size, order_num):
 
-				sort_scores = sorted(score_list, key = lambda x: x[1])
+			# Current estimate is the best we can do
+			if sort_scores[0][0] == (window_size, order_num):
+				return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
 
-				# Current estimate is the best we can do
-				if sort_scores[0][0] == (window_size, order_num):
-					return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+			# Perfect score, so return
+			elif sort_scores[0][1] == 0.0:
+				return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], 
+					num_peaks_desired)
 
-				# Perfect score, so return
-				elif sort_scores[0][1] == 0.0:
-					return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], num_peaks_desired)
-
-				else:
-					(window_size, order_num) = sort_scores[0][0]
-
-			return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+			else:
+				(window_size, order_num) = sort_scores[0][0]
 
 		elif sort_scores[0][1] == 0.0:
-			return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], num_peaks_desired)
+			return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], 
+				num_peaks_desired)
+
 
 		else:
 			(window_size, order_num) = sort_scores[0][0]
