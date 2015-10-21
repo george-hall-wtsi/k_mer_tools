@@ -426,7 +426,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	Uses Jellyfish to count k-mers of length k_size from input file. 
 	"""
 
-	print "Computing hgram data for k = " + str(k_size) + " for first time"
+	print "Computing histogram data for k = " + str(k_size) + " for first time"
 	print "Reading data for k = " + str(k_size)
 	
 	file_name = input_file_path.split("/")[-1].split(".")[0]
