@@ -78,10 +78,10 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 		"scripts/compute_k_mer_words.sh"), file_name, str(lower_limit), str(upper_limit), 
 		str(peak_number), os.path.dirname(__file__), str(k_size)]) 
 
-	new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
-		str(peak_number) + "_k_mers-read.fastq\n"
-	
-	update_assembly_config(new_location)
+	if assembler == 'soap':
+		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
+			str(peak_number) + "_k_mers-read.fastq\n"
+		update_assembly_config(new_location)
 
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/assemble_repeats.sh"), os.path.abspath(file_path), str(peak_number), 
@@ -138,7 +138,7 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 	peak_ranges = calculate_peak_ranges(hist_dict, max_peak)
 
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges, 2):
-		print "Started processing peak number" , peak_number
+		print "Started processing peak" , peak_number
 		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, 
 			reference_path, assembler, k_size)
 		
