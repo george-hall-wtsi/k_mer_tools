@@ -36,7 +36,7 @@ import numpy as np
 import scipy.signal as spysig
 
 import scripts.parse_dat_to_histo as parse_data
-import settings.graph_settings as graph_settings
+import settings.all_settings as all_settings
 
 
 def simulate_reads(reference, coverage, read_length, insert_size):
@@ -365,8 +365,8 @@ def plot_graph(hists_dict, graph_title, use_dots, max_peak = None):
 						plt.axvline(x, c = 'r')
 				
 				
-	reload(graph_settings)
-	settings = graph_settings.generate_settings() 
+	reload(all_settings)
+	settings = all_settings.generate_settings() 
 	
 	plt.xlim(settings['x_lower'], settings['x_upper'])
 	plt.ylim(settings['y_lower'], settings['y_upper'])
