@@ -39,7 +39,7 @@ SSAHA_SHRED_BIN=$MAIN_LOC"/../bin/ssaha_shred"
 
 NUM_CPUS=20
 
-SHRED_SIZE=500
+SHRED_SIZE=200
 $SSAHA_SHRED_BIN -rlength $SHRED_SIZE $REFERENCE $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta"
 
 # Generate hash of reference if requried (but hopefully will already be there)
@@ -47,6 +47,8 @@ if [ ! -f $HASH_LOCATION".smi" ] || [ ! -f $HASH_LOCATION".sma" ]; then
 	$MAIN_LOC"/scripts/generate_hash.sh" $HASH_LOCATION $REFERENCE $MAIN_LOC
 fi
 
-$SMALT_BIN map -m 20 -f ssaha -n $NUM_CPUS -O -d 0 $HASH_LOCATION $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta" > "shred_map"
+$SMALT_BIN map -m 20 -f ssaha -n $NUM_CPUS -O -d 0 \
+	$HASH_LOCATION $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta" > "shred_map"
+
 cd ..
 

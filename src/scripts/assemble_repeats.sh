@@ -43,14 +43,17 @@ K_SIZE=31
 NUM_PROCESSORS=20
 
 if [ $ASSEMBLER = "soap" ]; then
-	$SOAP_BIN all -s $ASSEMBLY_CONFIG_LOCATION -K $K_SIZE -k $K_SIZE -o "k"$K_SIZE -p $NUM_PROCESSORS > "k"$K_SIZE".all.err"
-	$GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t $NUM_PROCESSORS -b $ASSEMBLY_CONFIG_LOCATION -a "k"$K_SIZE".scafSeq" > "k"$K_SIZE"-new.gf.err"
+	$SOAP_BIN all -s $ASSEMBLY_CONFIG_LOCATION -K $K_SIZE -k $K_SIZE -o "k"$K_SIZE \
+		-p $NUM_PROCESSORS > "k"$K_SIZE".all.err"
+	$GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t $NUM_PROCESSORS -b $ASSEMBLY_CONFIG_LOCATION \
+		-a "k"$K_SIZE".scafSeq" > "k"$K_SIZE"-new.gf.err"
 fi
 
 if [ $ASSEMBLER = "spades" ]; then
 	$SPADES_BIN --s1 "peak_"$PEAK_NUM"_k_mers-read.fastq" -t $NUM_PROCESSORS \
 		-o "out-spades"
 	mv "out-spades/contigs.fasta" "k"$K_SIZE".fasta"
+	rm -rf "out-spades"
 fi
 
 $RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"

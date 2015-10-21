@@ -49,7 +49,9 @@ if [ ! -f $HASH_LOCATION".smi" ] || [ ! -f $HASH_LOCATION".sma" ]; then
 	$MAIN_LOC"/scripts/generate_hash.sh" $HASH_LOCATION $REFERENCE $MAIN_LOC
 fi
 
-$SMALT_BIN map -m 200 -f ssaha -n $NUM_PROCESSORS -O -d 0 $HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+$SMALT_BIN map -m 200 -f ssaha -n $NUM_PROCESSORS -O -d 0 \
+	$HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+
 grep "alignment:S:00" "peak_"$PEAK_NUM"_map" > "grepped"
 mv "grepped" "peak_"$PEAK_NUM"_map"
 
