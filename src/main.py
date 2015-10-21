@@ -104,8 +104,12 @@ def ranges_from_extrema(extrema):
 	new_ranges = []
 	for i in xrange(len(peak_ranges)):
 		new_ranges.append([0, 0])
-		new_ranges[i][0] = peak_ranges[i][0] + (0.1 * peak_widths[i])
-		new_ranges[i][1] = peak_ranges[i][1] - (0.1 * peak_widths[i])
+		reload(all_settings)
+		settings = all_settings.generate_settings()
+		desired_border = settings['desired_border']
+
+		new_ranges[i][0] = peak_ranges[i][0] + (desired_border * peak_widths[i])
+		new_ranges[i][1] = peak_ranges[i][1] - (desired_border * peak_widths[i])
 	peak_ranges = [(int(i), int(j)) for (i, j) in new_ranges][1:]
 
 	return peak_ranges

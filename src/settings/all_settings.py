@@ -19,16 +19,29 @@
 
 
 def generate_settings():	
+
 	settings = {}
+
+	# GRAPH SETTINGS: 
+	
 	settings['x_lower'] = 1
-	settings['x_upper'] = 3000
+	settings['x_upper'] = 500
 	settings['y_lower'] = 1
-	settings['y_upper'] = 10**6
+	settings['y_upper'] = 10**8
 	
 	# Scales can be linear or log
 	settings['x_scale'] = 'linear'
 	settings['y_scale'] = 'log'
 	settings['x_label'] = 'k-mer Coverage'
 	settings['y_label'] = 'k-mer Count Frequency'
+
+
+
+
+	# REPEATS SETTINGS:
+
+	settings['desired_border'] = 0.1 # Desire middle 80%
+
+
 	return settings
 
