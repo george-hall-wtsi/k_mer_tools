@@ -47,6 +47,15 @@ if [ $ASSEMBLER = "soap" ]; then
 		-p $NUM_PROCESSORS > "k"$K_SIZE".all.err"
 	$GAP_CLOSER_BIN -o "k"$K_SIZE".fasta" -t $NUM_PROCESSORS -b $ASSEMBLY_CONFIG_LOCATION \
 		-a "k"$K_SIZE".scafSeq" > "k"$K_SIZE"-new.gf.err"
+	rm -f "k"$K_SIZE".bubbleInScaff" "k"$K_SIZE".contigPosInscaff" "k"$K_SIZE".fasta.fill" \
+		"k"$K_SIZE".links" "k"$K_SIZE".peGrads" "k"$K_SIZE".readInGap.gz" \
+		"k"$K_SIZE".scaf_gap" "k"$K_SIZE".updated.edge" "k"$K_SIZE".all.err" \
+		"k"$K_SIZE".contig" "k"$K_SIZE".edge.gz" "k"$K_SIZE".gapSeq" \
+		"k"$K_SIZE".newContigIndex" "k"$K_SIZE".preArc" "k"$K_SIZE".readOnContig.gz" \
+		"k"$K_SIZE".scafSeq" "k"$K_SIZE".vertex" "k"$K_SIZE".Arc" "k"$K_SIZE".ContigIndex" \
+		"k"$K_SIZE".kmerFreq" "k"$K_SIZE"-new.gf.err" "k"$K_SIZE".preGraphBasic" \
+		"k"$K_SIZE".scaf" "k"$K_SIZE".scafStatistics"  
+
 fi
 
 if [ $ASSEMBLER = "spades" ]; then
@@ -56,7 +65,10 @@ if [ $ASSEMBLER = "spades" ]; then
 	rm -rf "out-spades"
 fi
 
+rm "peak_"$PEAK_NUM"_k_mers-read.fasta"
+
 $RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
+rm "k"$K_SIZE".fasta"
 
 mkdir "peak_"$PEAK_NUM
 find . -maxdepth 1 -type f -exec mv {} ./"peak_"$PEAK_NUM/ \;
