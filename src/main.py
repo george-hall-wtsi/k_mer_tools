@@ -361,15 +361,22 @@ def plot_graph(hists_dict, graph_title, use_dots, max_peak = None):
 
 	k_mer_sizes = hists_dict.keys()
 	for size in k_mer_sizes:
-		foo = pad_data(hists_dict[size])
-		if not use_dots:
-			plt.plot(foo.keys(), foo.values())
+		padded_data = pad_data(hists_dict[size])
+
 		if use_dots:
-			plt.plot(foo.keys(), foo.values(), 'o')
+			plt.plot(padded_data.keys(), padded_data.values(), 'o')
+		else:
+			plt.plot(padded_data.keys(), padded_data.values())
+
 		if max_peak is not None:
-			for (extremum, ordinates) in find_extrema(hists_dict[size], max_peak).items():
+
+			if max_peak <= 0:
+				raise Exception("Maximum desired peak must be a positive integer")
+
+			extrema = find_extrema(hists_dict[size], max_peak)
+			for (extremum, ordinates) in extrema.items():
 				if extremum == 'Max':
-					peak_ranges = calculate_peak_ranges(hists_dict[size], max_peak)
+					peak_ranges = ranges_from_extrema(extrema)
 					for (lower, upper) in peak_ranges:
 						plt.axvspan(lower, upper, color = 'green', alpha = 0.5)
 					for x in ordinates:
@@ -543,7 +550,7 @@ def parser():
 		help = "plot the histogram using red dots", action = "store_true")
 	plot_subparser.add_argument("-l", help = "draw lines to split graph into peaks", 
 		type = int)
-	plot_subparser.add_argument("--graph_title", help = "specify the title for the graph", 
+	plot_subparser.add_argument("--title", help = "specify the title for the graph", 
 		type = str, default = "")
 	plot_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	
 		type = int, nargs = '+')
@@ -627,7 +634,7 @@ def main():
 	args, hists_dict = parser()
 
 	if args.func == "plot":
-		graph_title = args.graph_title or args.path # If user has entered title then set title
+		graph_title = args.title or args.path # If user has entered title then set title
 		plot_graph(hists_dict, graph_title, args.o, args.l)
 
 	if args.func == "size":
