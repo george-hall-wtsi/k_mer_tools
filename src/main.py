@@ -227,7 +227,7 @@ def estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired):
 	Smooths the data using a moving average. Uses Scipy.signals.argrelextrema to then detect
 	which points correspond to extrema. 
 	"""
-	
+
 	window = np.ones(int(window_size))/float(window_size)
 	moving_average = np.convolve(hist_dict.values(), window, 'same')
 	smoothed_data = dict(zip(hist_dict.keys(), [int(x) for x in moving_average]))
@@ -275,12 +275,26 @@ def find_extrema(hist_dict, num_peaks_desired):
 	"""
 
 	hist_dict = pad_data(hist_dict)
+	score_list = []
+	for i in xrange(max(2, num_peaks_desired), num_peaks_desired + 4):
+		score_list.append([find_extrema_main(hist_dict, i), i]) 
+	sorted_scores = sorted(score_list, key = lambda x: x[0][1])
+
+	extrema = sorted_scores[0][0][0]
+
+	if extrema['Max'] == [] or extrema['Min'] == []:
+		raise Exception("Could not find suitable extrema")
+
+	return {'Max': extrema['Max'][:num_peaks_desired], 'Min': extrema['Min'][:num_peaks_desired + 1]}
+
+
+def find_extrema_main(hist_dict, num_peaks_desired):
 	(window_size, order_num) = (10, 10)
 
 	while True:
 		score_list = []
-		for (w, o) in [(window_size, order_num), (window_size + 1, order_num), 
-			(window_size, order_num + 1), (window_size - 1, order_num), 
+		for (w, o) in [(window_size, order_num), (window_size + 5, order_num), 
+			(window_size, order_num + 1), (window_size - 5, order_num), 
 			(window_size, order_num - 1)]:
 
 			if (w > 0) and (o > 0):
@@ -290,31 +304,27 @@ def find_extrema(hist_dict, num_peaks_desired):
 		sort_scores = sorted(score_list, key = lambda x: x[1])
 
 		if sort_scores[0][1] == float("inf"):
+			if window_size > 1000:
+				return [{'Max': [], 'Min': []}, float("inf")]
 			(window_size, order_num) = (window_size + 10, order_num + 10)
 			continue
-		#raise Exception("Could not find suitable extrema")
-
+		
+		# Current estimate is the best we can do
 		elif sort_scores[0][0] == (window_size, order_num):
+			extrema = estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
+			return [extrema, sort_scores[0][1]]
 
-			# Current estimate is the best we can do
-			if sort_scores[0][0] == (window_size, order_num):
-				return estimate_extrema(hist_dict, window_size, order_num, num_peaks_desired)
-
-			# Perfect score, so return
-			elif sort_scores[0][1] == 0.0:
-				return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], 
-					num_peaks_desired)
-
-			else:
-				(window_size, order_num) = sort_scores[0][0]
-
+		# Perfect score, so return
 		elif sort_scores[0][1] == 0.0:
-			return estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], 
+			extrema = estimate_extrema(hist_dict, sort_scores[0][0][0], sort_scores[0][0][1], 
 				num_peaks_desired)
-
+			return [extrema, sort_scores[0][1]]
 
 		else:
 			(window_size, order_num) = sort_scores[0][0]
+
+
+
 
 		
 def pad_data(hist_dict):
