@@ -1,9 +1,11 @@
-Set of k-mer tools used primarily for quality control. Nowhere near finished. Will also only work on my local machine.
+A set of k-mer tools used to perform various types of analysis on sequencing reads.
+
+Allows the user to plot the k-mer spectrum, estimate genome size, and find repetitive
+sequences without the use of a reference genome. 
 
 
+Author: George Hall <gh10@sanger.ac.uk> 
 Copyright (c) 2015 Genome Research Ltd. 
-
-Author: George Hall gh10@sanger.ac.uk 
 
 This program is free software: you can redistribute it and/or modify it under 
 the terms of the GNU General Public License as published by the Free Software 
