@@ -578,7 +578,7 @@ def parser():
 		default = "spades", choices = ["soap", "spades"])
 	repeats_subparser.set_defaults(func = "repeats")
 
-	indiv_repeats_subparser = subparsers.add_parser("indiv_repeats", 
+	indiv_repeats_subparser = subparsers.add_parser("indiv-repeats", 
 		help = "find repetitive k-mer words, and align repetitive contigs to reference for a \
 		specified range")
 	indiv_repeats_subparser.add_argument("path", type = str, 
@@ -594,7 +594,7 @@ def parser():
 	indiv_repeats_subparser.add_argument("-assembler", 
 		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, 
 		default = "spades", choices = ["soap", "spades"])
-	indiv_repeats_subparser.set_defaults(func = "indiv_repeats")
+	indiv_repeats_subparser.set_defaults(func = "indiv-repeats")
 
 	simulate_subparser = subparsers.add_parser("simulate", 
 		help = "simulate random reads from reference genome")
@@ -658,7 +658,7 @@ def main():
 				args.ref)
 			print "Finished finding repeats"
 
-	if args.func == "indiv_repeats":
+	if args.func == "indiv-repeats":
 		extension = ".".join(args.path.split("/")[-1].split(".")[1:])
 
 		if extension not in ["fasta", "fastq"]:
@@ -668,8 +668,8 @@ def main():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
 				compute_hist_from_fast(args.path, size)
-			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
-				args.assembler, size, args.ref)
+
+			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, args.ref, args.assembler, size)
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":
