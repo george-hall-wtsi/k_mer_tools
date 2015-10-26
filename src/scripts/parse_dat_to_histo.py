@@ -48,8 +48,8 @@ def parse(input_file_path, k_mer_size):
 	
 	file_name = input_file_path.split("/")[-1].split(".")[0] + "_" + str(k_mer_size) + "mer"
 	
-	with open("/lustre/scratch110/sanger/gh10/Code/k_mer_scripts/hgram_data/" + file_name \
-	+ ".hgram","w") as to_write:
+	with open("/".join(input_file_path.split("/")[:-1]) + "/" + file_name + ".hgram", 'w') \
+		as to_write: 
 	
 		with open(input_file_path,"r") as f:
 			file_lines = f.readlines()

@@ -485,7 +485,7 @@ def generate_histogram(input_file_path, k_mer_size):
 		return
 	
 	elif extension in ["data","dat"]:
-		parse_data.parse(input_file_path, k_mer_size)
+		parse_data.parse(os.path.abspath(input_file_path), k_mer_size)
 		
 	elif extension in ["fasta","fa","fsa","fastq"]:
 		if k_mer_size == []:
