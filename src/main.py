@@ -28,7 +28,7 @@ import sys
 import subprocess32
 import random
 import argparse
-import time
+import math
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -65,7 +65,7 @@ def update_assembly_config(new_location):
 
 
 def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, reference_path, 
-	assembler, k_size):
+	assembler, k_size, assembler_k, processors):
 
 	"""
 	Takes a file and computes k-mer words present in the section of the k-mer spectrum graph 
@@ -73,6 +73,9 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	the reference sequence has been provided (i.e. the reads have been simulated from a 
 	reference for error checking), these contigs are mapped against it.
 	"""
+
+	if assembler_k >= k_size:
+		raise Exception("Assembler k-mer size must be smaller than overall k-mer size")
 
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/compute_k_mer_words.sh"), file_name, str(lower_limit), str(upper_limit), 
@@ -85,12 +88,13 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/assemble_repeats.sh"), os.path.abspath(file_path), str(peak_number), 
-		os.path.dirname(__file__), assembler])
+		os.path.dirname(__file__), assembler, str(assembler_k), str(processors)])
 	
 	if reference_path != "":
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 			"scripts/align_sim_to_ref.sh"), os.path.abspath(reference_path), 
-			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__)])
+			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__), 
+			str(assembler_k), str(processors)])
 
 	return
 
@@ -121,7 +125,8 @@ def calculate_peak_ranges(hist_dict, max_peak):
 	return ranges_from_extrema(extrema)
 
 
-def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_path = ""):
+def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, assembler_k, 
+	processors, reference_path = ""):
 	
 	"""
 	Finds distinct peaks of k-mer spectrum, then uses Smalt to discover k-mer words associated
@@ -144,7 +149,7 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, reference_pa
 	for (peak_number, (lower_limit, upper_limit)) in enumerate(peak_ranges, 2):
 		print "Started processing peak" , peak_number
 		process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, 
-			reference_path, assembler, k_size)
+			reference_path, assembler, k_size, assembler_k, processors)
 		
 		if reference_path != "":
 			# Mask repeats found in each peak (replace their loci with Xs on a copy of 
@@ -441,7 +446,7 @@ def generate_sample(hist_dict, sample_size):
 	return sample
 
 
-def compute_hist_from_fast(input_file_path, k_size):
+def compute_hist_from_fast(input_file_path, k_size, processors, memory):
 	
 	"""
 	Uses Jellyfish to count k-mers of length k_size from input file. 
@@ -449,14 +454,30 @@ def compute_hist_from_fast(input_file_path, k_size):
 
 	print "Computing histogram data for k = " + str(k_size) + " for first time"
 	print "Reading data for k = " + str(k_size)
-	
+
 	file_name = input_file_path.split("/")[-1].split(".")[0]
 	mer_count_file = file_name + "_mer_counts_" + str(k_size) + ".jf"
 	current_dir = os.path.dirname(__file__)
 
-	# Counts occurences of k-mers of size "k-size" in "file_input":  
+	# Count occurences of k-mers of size "k_size" in input file  
+
+	s = 100000000 # Initial s
+
+	l = math.ceil(math.log(s, 2))
+	mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
+
+	while mem_used < memory:
+		s = s * 1.1
+		l = math.ceil(math.log(s, 2))
+		mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
+
+	if s != 100000000:
+		s = s / 1.1
+	
+	s = int(s)
+
 	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-		"count", ("-m " + str(k_size)), "-s 400M", "-t 25", "-C", input_file_path, 
+		"count", ("-m " + str(k_size)), "-s " + str(s), "-t " + str(processors), "-C", input_file_path, 
 		'-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
@@ -471,7 +492,7 @@ def compute_hist_from_fast(input_file_path, k_size):
 	print "Finished for k = " + str(k_size)
 	
 
-def generate_histogram(input_file_path, k_mer_size):
+def generate_histogram(input_file_path, k_mer_size, processors, memory):
 	
 	"""
 	Essentially ensures that a .hgram file exists and is stored at the correct location for
@@ -491,7 +512,7 @@ def generate_histogram(input_file_path, k_mer_size):
 		if k_mer_size == []:
 			raise Exception("Cannot use an empty k-mer size list when trying to create \
 				histograms")
-		compute_hist_from_fast(input_file_path, k_mer_size)
+		compute_hist_from_fast(input_file_path, k_mer_size, processors, memory)
 		
 	elif extension == "hgram":
 		if str(k_mer_size) == file_name[-len(str(k_mer_size)) - 3:-3]:
@@ -504,14 +525,14 @@ def generate_histogram(input_file_path, k_mer_size):
 		raise Exception("Unrecognised file extension. ")
 
 
-def calculate_hist_dict(input_file_path, k_size):
+def calculate_hist_dict(input_file_path, k_size, processors, memory):
 
 	"""
 	Returns dictionary consisting of keys corresponding to occurrences and values 
 	corresponding to frequencies.
 	"""
 	
-	generate_histogram(input_file_path, k_size)
+	generate_histogram(input_file_path, k_size, processors, memory)
 		
 	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
 	extension = str(input_file_path.split("/")[-1].split(".")[-1])
@@ -537,69 +558,71 @@ def parser():
 	Uses argparse module to create an argument parser. Its first argument is the function which 
 	the user wishes to execute.  
 	"""
+
+	base_parser = argparse.ArgumentParser(add_help = False,
+		description = "A tool for computing genomic characteristics using k-mers")
+
+	base_parser.add_argument("path", type = str, help = "location at which the data is stored")
+	base_parser.add_argument("-p", "--processors", 
+		help = "maximum number of CPUs used (default: 1)", default = 1, type = int)
+	base_parser.add_argument("-m", "--memory", 
+		help = "maximum size of Jellyfish's hash table in memory (in Gb). Only relevant if \
+			Jellyfish has to count k-mers (default: 1)", 
+		default = 1, type = int)
 	
-	parser = argparse.ArgumentParser(
-	description = "A tool for computing genomic characteristics using k-mers")
+	parser = argparse.ArgumentParser()
 
-	subparsers = parser.add_subparsers(help = "select which function to execute")
+	single_k_required = argparse.ArgumentParser(add_help = False, parents = [base_parser])
+	single_k_required.add_argument("k", help = "k value to use", type = int, nargs = 1)
 
-	plot_subparser = subparsers.add_parser("plot", help = "plot k-mer spectra")
-	plot_subparser.add_argument("path", type = str, 
-		help = "location at which the data is stored")
-	plot_subparser.add_argument("-o", 
-		help = "plot the histogram using red dots", action = "store_true")
-	plot_subparser.add_argument("-l", help = "draw lines to split graph into peaks", 
-		type = int)
-	plot_subparser.add_argument("--title", help = "specify the title for the graph", 
-		type = str, default = "")
-	plot_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	
+	multiple_k_possible = argparse.ArgumentParser(add_help = False, parents = [base_parser])
+	multiple_k_possible.add_argument("k", help = "k value(s) to use (seperate with spaces)", 
 		type = int, nargs = '+')
-	plot_subparser.set_defaults(func = "plot")
 
-	size_subparser = subparsers.add_parser("size", help = "calculate genome size")
-	size_subparser.add_argument("path", type = str, 
-		help = "location at which the data is stored")
-	size_subparser.add_argument("k_mer_sizes", help = "k-mer sizes to be used",	
-		type = int, nargs = '+')
-	size_subparser.set_defaults(func = "size")
-
-	repeats_subparser = subparsers.add_parser("repeats", 
-		help = "find repetitive k-mer words, and align repetitive contigs to reference")
-	repeats_subparser.add_argument("path", type = str, 
-		help = "location at which the data is stored")
-	repeats_subparser.add_argument("k_mer_size", help = "k-mer sizes to be used",	type = int,
-		nargs = 1)
-	repeats_subparser.add_argument("max_peak", 
-		help = "highest peak number to consider", type = int)
-	repeats_subparser.add_argument("-ref", 
+	some_repeats = argparse.ArgumentParser(add_help = False, parents = [single_k_required])
+	some_repeats.add_argument("-r", "--reference", 
 		help = "location of reference if reads are simulated", type = str, default = "")
-	repeats_subparser.add_argument("-assembler", 
+	some_repeats.add_argument("-a", "--assembler", 
 		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, 
 		default = "spades", choices = ["soap", "spades"])
-	repeats_subparser.set_defaults(func = "repeats")
+	some_repeats.add_argument("-d", "--assembler_k",  
+		help = "k-mer size for assembler (must be smaller than overall k-mer size)",
+		type = int, default = 31)
 
+	subparsers = parser.add_subparsers(help = "select which function to execute")
+	plot_subparser = subparsers.add_parser("plot", help = "plot k-mer spectra", 
+		parents = [multiple_k_possible])
+	size_subparser = subparsers.add_parser("size", help = "estimate genome size", 
+		parents = [multiple_k_possible])
+	repeats_subparser = subparsers.add_parser("repeats", 
+		help = "find repetitive k-mer words, and align repetitive contigs to reference", 
+		parents = [some_repeats])
 	indiv_repeats_subparser = subparsers.add_parser("indiv-repeats", 
 		help = "find repetitive k-mer words, and align repetitive contigs to reference for a \
-		specified range")
-	indiv_repeats_subparser.add_argument("path", type = str, 
-		help = "location at which the data is stored")
+		specified range", parents = [some_repeats])
+	simulate_subparser = subparsers.add_parser("simulate", 
+		help = "simulate random reads from reference genome", parents = [base_parser])
+
+	plot_subparser.add_argument("-o", "--dots", 
+		help = "plot the histogram using red dots", action = "store_true")
+	plot_subparser.add_argument("-l", "--lines", 
+		help = "draw lines to split graph into peaks up to peak number l", type = int)
+	plot_subparser.add_argument("-t", "--title", help = "specify the title for the graph", 
+		type = str, default = "")
+	plot_subparser.set_defaults(func = "plot")
+
+	size_subparser.set_defaults(func = "size")
+
+	repeats_subparser.add_argument("max_peak", 
+		help = "highest peak number to consider", type = int)
+	repeats_subparser.set_defaults(func = "repeats")
+
 	indiv_repeats_subparser.add_argument("peak_name", type = str, 
 		help = "name of peak to be calulated")
 	indiv_repeats_subparser.add_argument("l_lim", type = int, help = "lower limit of range")
 	indiv_repeats_subparser.add_argument("u_lim", type = int, help = "upper limit of range")
-	indiv_repeats_subparser.add_argument("k_mer_size", help = "k-mer sizes to be used", 
-		type = int, nargs = 1)
-	indiv_repeats_subparser.add_argument("-ref", 
-		help = "location of reference if reads are simulated", type = str, default = "")
-	indiv_repeats_subparser.add_argument("-assembler", 
-		help = "If SOAPdenovo is to be used, instead of SPAdes", type = str, 
-		default = "spades", choices = ["soap", "spades"])
 	indiv_repeats_subparser.set_defaults(func = "indiv-repeats")
 
-	simulate_subparser = subparsers.add_parser("simulate", 
-		help = "simulate random reads from reference genome")
-	simulate_subparser.add_argument("path", type = str, 
-		help = "location at which the data is stored")
 	simulate_subparser.add_argument("coverage", type = float, 
 		help = "desired simulated coverage")
 	simulate_subparser.add_argument("length", type = int, 
@@ -615,14 +638,14 @@ def parser():
 
 	# Calculate hists_dict if k_mer_words have been supplied
 	try:
-		for size in args.k_mer_sizes:
-			hists_dict[size] = calculate_hist_dict(args.path, size)
+		for size in args.k:
+			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, args.memory)
 	except AttributeError:
 		pass
 
 	try:
-		size = args.k_mer_size[0]
-		hists_dict[size] = calculate_hist_dict(args.path, size)
+		size = args.k[0]
+		hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, args.memory)
 	except AttributeError:
 		pass
 		
@@ -635,14 +658,13 @@ def main():
 
 	if args.func == "plot":
 		graph_title = args.title or args.path # If user has entered title then set title
-		plot_graph(hists_dict, graph_title, args.o, args.l)
+		plot_graph(hists_dict, graph_title, args.dots, args.lines)
 
 	if args.func == "size":
-		print ""
 		for size in compute_genome_size(hists_dict):
 			print "Size calculated to be " + str(size[1]) + " base pairs (using " + \
 				str(size[0]) + "mers)"
-			
+
 	if args.func == "repeats":
 
 		extension = ".".join(args.path.split("/")[-1].split(".")[1:])
@@ -653,9 +675,9 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size)
+				compute_hist_from_fast(args.path, size, args.processors, args.memory)
 			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, size, 
-				args.ref)
+				args.assembler_k, args.processors, args.reference)
 			print "Finished finding repeats"
 
 	if args.func == "indiv-repeats":
@@ -667,9 +689,10 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size)
+				compute_hist_from_fast(args.path, size, args.processors, args.memory)
 
-			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, args.ref, args.assembler, size)
+			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
+				args.reference, args.assembler, size, args.assembler_k, args.processors)
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":

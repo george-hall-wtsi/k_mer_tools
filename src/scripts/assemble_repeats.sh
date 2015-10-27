@@ -38,9 +38,8 @@ ASSEMBLY_CONFIG_LOCATION=$MAIN_LOC"/scripts/assembly_config"
 
 cd $WORKING_DIR
 
-# Change assembly_config and sh.run-soap (maybe make k = 37)
-K_SIZE=31
-NUM_PROCESSORS=20
+K_SIZE=$5
+NUM_PROCESSORS=$6
 
 if [ $ASSEMBLER = "soap" ]; then
 	$SOAP_BIN all -s $ASSEMBLY_CONFIG_LOCATION -K $K_SIZE -k $K_SIZE -o "k"$K_SIZE \
