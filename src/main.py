@@ -642,31 +642,23 @@ def parser():
 	simulate_subparser.set_defaults(func = "simulate_reads")
 
 	args = parser.parse_args()
-	
-	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
-	hists_dict = {}
 
-	# Calculate hists_dict if k_mer_words have been supplied
-	try:
-		for size in args.k:
-			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
-				args.hash_size)
-	except AttributeError:
-		pass
-
-	try:
-		size = args.k[0]
-		hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
-			args.hash_size)
-	except AttributeError:
-		pass
-		
-	return (args, hists_dict)
+	return args
 
 		
 def main():
 
-	args, hists_dict = parser()
+	args = parser()
+
+	# Calculate hists_dict if k_mer_words have been supplied
+	if args.func in ['plot', 'size', 'repeats', 'indiv-repeats']:
+
+		# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
+		hists_dict = {}
+
+		for size in args.k:
+			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
+				args.hash_size)
 
 	if args.func == "plot":
 		graph_title = args.title or args.path # If user has entered title then set title
