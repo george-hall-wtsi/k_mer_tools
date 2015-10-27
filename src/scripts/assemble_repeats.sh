@@ -66,7 +66,7 @@ fi
 
 rm "peak_"$PEAK_NUM"_k_mers-read.fasta"
 
-$RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "k"$K_SIZE"-2.fastq"
+$RENAME_FASTQ_BIN -name contig -len 200 "k"$K_SIZE".fasta" "contigs.fastq"
 rm "k"$K_SIZE".fasta"
 
 mkdir "peak_"$PEAK_NUM

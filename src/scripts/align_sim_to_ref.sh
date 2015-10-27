@@ -50,7 +50,7 @@ if [ ! -f $HASH_LOCATION".smi" ] || [ ! -f $HASH_LOCATION".sma" ]; then
 fi
 
 $SMALT_BIN map -m 200 -f ssaha -n $NUM_PROCESSORS -O -d 0 \
-	$HASH_LOCATION "k"$K_SIZE"-2.fastq" > "peak_"$PEAK_NUM"_map"
+	$HASH_LOCATION "contigs.fastq" > "peak_"$PEAK_NUM"_map"
 
 grep "alignment:S:00" "peak_"$PEAK_NUM"_map" > "grepped"
 mv "grepped" "peak_"$PEAK_NUM"_map"
