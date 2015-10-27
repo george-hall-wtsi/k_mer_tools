@@ -51,8 +51,7 @@ $MAIN_LOC"/../bin/jellyfish" dump -L $LOWER_LIM -U $UPPER_LIM \
 cd $WITHOUT_EXTENSION"_reads"
 cat $PEAK_NUM"_words.tmp.fasta" | awk '{print ">reads \n" $1}' > \
 	"peak_"$PEAK_NUM"_k_mers-read.fasta"
-$RENAME_FASTQ_BIN -name kmer-read -len 10 "peak_"$PEAK_NUM"_k_mers-read.fasta" \
-	"peak_"$PEAK_NUM"_k_mers-read.fastq"
+$RENAME_FASTQ_BIN -name kmer-read "peak_"$PEAK_NUM"_k_mers-read.fasta" "peak_"$PEAK_NUM"_k_mers-read.fastq"
 
 rm $PEAK_NUM"_words.tmp.fasta"
 
