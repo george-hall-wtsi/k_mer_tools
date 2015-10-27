@@ -446,7 +446,7 @@ def generate_sample(hist_dict, sample_size):
 	return sample
 
 
-def compute_hist_from_fast(input_file_path, k_size, processors, memory):
+def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	
 	"""
 	Uses Jellyfish to count k-mers of length k_size from input file. 
@@ -466,7 +466,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, memory):
 	l = math.ceil(math.log(s, 2))
 	mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
 
-	while mem_used < memory:
+	while mem_used < hash_size:
 		s = s * 1.1
 		l = math.ceil(math.log(s, 2))
 		mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
@@ -492,7 +492,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, memory):
 	print "Finished for k = " + str(k_size)
 	
 
-def generate_histogram(input_file_path, k_mer_size, processors, memory):
+def generate_histogram(input_file_path, k_mer_size, processors, hash_size):
 	
 	"""
 	Essentially ensures that a .hgram file exists and is stored at the correct location for
@@ -512,7 +512,7 @@ def generate_histogram(input_file_path, k_mer_size, processors, memory):
 		if k_mer_size == []:
 			raise Exception("Cannot use an empty k-mer size list when trying to create \
 				histograms")
-		compute_hist_from_fast(input_file_path, k_mer_size, processors, memory)
+		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size)
 		
 	elif extension == "hgram":
 		if str(k_mer_size) == file_name[-len(str(k_mer_size)) - 3:-3]:
@@ -525,14 +525,14 @@ def generate_histogram(input_file_path, k_mer_size, processors, memory):
 		raise Exception("Unrecognised file extension. ")
 
 
-def calculate_hist_dict(input_file_path, k_size, processors, memory):
+def calculate_hist_dict(input_file_path, k_size, processors, hash_size):
 
 	"""
 	Returns dictionary consisting of keys corresponding to occurrences and values 
 	corresponding to frequencies.
 	"""
 	
-	generate_histogram(input_file_path, k_size, processors, memory)
+	generate_histogram(input_file_path, k_size, processors, hash_size)
 		
 	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
 	extension = str(input_file_path.split("/")[-1].split(".")[-1])
@@ -559,26 +559,35 @@ def parser():
 	the user wishes to execute.  
 	"""
 
+	# Most basic parser - all it asks for is path to some data
 	base_parser = argparse.ArgumentParser(add_help = False,
 		description = "A tool for computing genomic characteristics using k-mers")
 
 	base_parser.add_argument("path", type = str, help = "location at which the data is stored")
-	base_parser.add_argument("-p", "--processors", 
+
+	# Adds options to choose numbers of CPUs used and size of Jellyfish's hash table (could be 
+	# relevant in all fucntions other than simulate)
+	basic_options = argparse.ArgumentParser(add_help = False, parents = [base_parser])
+	basic_options.add_argument("-p", "--processors", 
 		help = "maximum number of CPUs used (default: 1)", default = 1, type = int)
-	base_parser.add_argument("-m", "--memory", 
+	basic_options.add_argument("-s", "--hash-size", 
 		help = "maximum size of Jellyfish's hash table in memory (in Gb). Only relevant if \
 			Jellyfish has to count k-mers (default: 1)", 
 		default = 1, type = int)
 	
+	# Actual parser which is used
 	parser = argparse.ArgumentParser()
 
-	single_k_required = argparse.ArgumentParser(add_help = False, parents = [base_parser])
+	# For functions which must only have one value for k
+	single_k_required = argparse.ArgumentParser(add_help = False, parents = [basic_options])
 	single_k_required.add_argument("k", help = "k value to use", type = int, nargs = 1)
 
-	multiple_k_possible = argparse.ArgumentParser(add_help = False, parents = [base_parser])
+	# For functions which are capable of being passed multiple values of k
+	multiple_k_possible = argparse.ArgumentParser(add_help = False, parents = [basic_options])
 	multiple_k_possible.add_argument("k", help = "k value(s) to use (seperate with spaces)", 
 		type = int, nargs = '+')
 
+	# For functions which are in some way related to finding repetitive sequence
 	some_repeats = argparse.ArgumentParser(add_help = False, parents = [single_k_required])
 	some_repeats.add_argument("-r", "--reference", 
 		help = "location of reference if reads are simulated", type = str, default = "")
@@ -590,6 +599,7 @@ def parser():
 		type = int, default = 31)
 
 	subparsers = parser.add_subparsers(help = "select which function to execute")
+
 	plot_subparser = subparsers.add_parser("plot", help = "plot k-mer spectra", 
 		parents = [multiple_k_possible])
 	size_subparser = subparsers.add_parser("size", help = "estimate genome size", 
@@ -639,13 +649,15 @@ def parser():
 	# Calculate hists_dict if k_mer_words have been supplied
 	try:
 		for size in args.k:
-			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, args.memory)
+			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
+				args.hash_size)
 	except AttributeError:
 		pass
 
 	try:
 		size = args.k[0]
-		hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, args.memory)
+		hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
+			args.hash_size)
 	except AttributeError:
 		pass
 		
@@ -675,7 +687,7 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size, args.processors, args.memory)
+				compute_hist_from_fast(args.path, size, args.processors, args.hash_size)
 			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, size, 
 				args.assembler_k, args.processors, args.reference)
 			print "Finished finding repeats"
@@ -689,7 +701,7 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size, args.processors, args.memory)
+				compute_hist_from_fast(args.path, size, args.processors, args.hash_size)
 
 			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
 				args.reference, args.assembler, size, args.assembler_k, args.processors)
