@@ -39,13 +39,12 @@ import scripts.parse_dat_to_histo as parse_data
 import settings.all_settings as all_settings
 
 
-def simulate_reads(reference, coverage, read_length, insert_size):
+def simulate_reads(reference, coverage, read_length, insert_size, name):
 
 	"""
 	Cuts reads at random locations on a reference genome and stores them in a .fasta file.
 	"""
 
-	name = reference.split("/")[-1].split(".")[0]
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/sim_reads.sh"), 
 		reference, str(coverage), str(read_length), str(insert_size), name, 
 		os.path.dirname(__file__)])
@@ -639,6 +638,8 @@ def parser():
 		help = "desired simulated read length")
 	simulate_subparser.add_argument("insert", type = int, 
 		help = "desired simulated insert size")
+	simulate_subparser.add_argument("-n", "--name", type = str, 
+		help = "name for simulated data", default = "")
 	simulate_subparser.set_defaults(func = "simulate_reads")
 
 	args = parser.parse_args()
@@ -700,7 +701,8 @@ def main():
 			print "Finished finding repeats"
 
 	if args.func == "simulate_reads":
-		simulate_reads(args.path, args.coverage, args.length, args.insert)
+		name = (args.name or args.path.split("/")[-1].split(".")[0])
+		simulate_reads(args.path, args.coverage, args.length, args.insert, name)
 
 	return
 
