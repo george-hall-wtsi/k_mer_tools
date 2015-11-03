@@ -451,6 +451,10 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	Uses Jellyfish to count k-mers of length k_size from input file. 
 	"""
 
+	if (processors == 1) and (hash_size == 1):
+		print "Number of processors used and hash size have both been left at their default"+ \
+			"\nvalues. This is not a problem, but may not be what you wanted."
+
 	print "Computing histogram data for k = " + str(k_size) + " for first time"
 	print "Reading data for k = " + str(k_size)
 
