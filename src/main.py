@@ -28,7 +28,7 @@ import os.path
 # Activate virtualenv
 file_location = os.path.dirname(__file__)
 activate_this = os.path.join(file_location, 'virtualenv/bin/activate_this.py')
-execfile(activate_this, dict(__file__=activate_this))
+execfile(activate_this, dict(__file__ = activate_this))
 # Virtualenv should now be activated
 
 import sys
@@ -491,8 +491,8 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	s = int(s)
 
 	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-		"count", ("-m " + str(k_size)), "-s " + str(s), "-t " + str(processors), "-C", input_file_path, 
-		'-o', mer_count_file])
+		"count", ("-m " + str(k_size)), "-s " + str(s), "-t " + str(processors), "-C", 
+		input_file_path, '-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
 	
