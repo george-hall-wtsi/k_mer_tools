@@ -1,3 +1,4 @@
+.gitignore
 *.pyc
 *.jf
 *.swp
@@ -8,3 +9,4 @@ pe_tests*.py
 .nfs*
 __init__.py
 bin/
+src/virtualenv
