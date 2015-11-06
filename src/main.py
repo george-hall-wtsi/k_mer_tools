@@ -566,7 +566,7 @@ def calculate_hist_dict(input_file_path, k_size, processors, hash_size):
 	return store_dict
 
 
-def parser():
+def argument_parsing():
 	
 	"""
 	Uses argparse module to create an argument parser. Its first argument is the function which 
@@ -664,7 +664,7 @@ def parser():
 		
 def main():
 
-	args = parser()
+	args = argument_parsing()
 
 	# Calculate hists_dict if k_mer_words have been supplied
 	if args.func in ['plot', 'size', 'repeats', 'indiv-repeats']:
