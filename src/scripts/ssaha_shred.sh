@@ -39,7 +39,7 @@ SSAHA_SHRED_BIN=$MAIN_LOC"/../bin/ssaha_shred"
 
 NUM_CPUS=20
 
-SHRED_SIZE=200
+SHRED_SIZE=100
 $SSAHA_SHRED_BIN -rlength $SHRED_SIZE $REFERENCE $REFERENCE_NAME"-shred-"$SHRED_SIZE"bp.fasta"
 
 # Generate hash of reference if requried (but hopefully will already be there)
