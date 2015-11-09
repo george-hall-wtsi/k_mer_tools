@@ -482,7 +482,6 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 		mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
 
 		if mem_used <= 0.0:
-			s = 100000000
 			break
 
 	if s != 100000000:
