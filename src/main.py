@@ -505,7 +505,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	print "Finished for k = " + str(k_size)
 	
 
-def generate_histogram(input_file_path, k_mer_size, processors, hash_size):
+def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force_jellyfish):
 	
 	"""
 	Essentially ensures that a .hgram file exists and is stored at the correct location for
@@ -515,37 +515,29 @@ def generate_histogram(input_file_path, k_mer_size, processors, hash_size):
 	file_name = input_file_path.split("/")[-1].split(".")[0]
 	extension = input_file_path.split("/")[-1].split(".")[-1]
 	
-	if os.path.isfile(file_name + "_" + str(k_mer_size) + "mer.hgram"):
+	if os.path.isfile(file_name + "_" + str(k_mer_size) + "mer.hgram") and not force_jellyfish:
 		return
 	
 	elif extension in ["data","dat"]:
 		parse_data.parse(os.path.abspath(input_file_path), k_mer_size)
 		
-	elif extension in ["fasta","fa","fsa","fastq"]:
-		if k_mer_size == []:
-			raise Exception("Cannot use an empty k-mer size list when trying to create \
-				histograms")
-		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size)
-		
 	elif extension == "hgram":
-		if str(k_mer_size) == file_name[-len(str(k_mer_size)) - 3:-3]:
-			# If file is already histogram with correct k-mer size
-			pass
-		else:
+		if str(k_mer_size) != file_name[-len(str(k_mer_size)) - 3:-3]:
 			raise Exception("Incompatible k-mer size and .hgram file. ")
+		else:
+			return
 	
 	else:
-		raise Exception("Unrecognised file extension. ")
+		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size)
 
-
-def calculate_hist_dict(input_file_path, k_size, processors, hash_size):
+def calculate_hist_dict(input_file_path, k_size, processors, hash_size, force_jellyfish):
 
 	"""
 	Returns dictionary consisting of keys corresponding to occurrences and values 
 	corresponding to frequencies.
 	"""
 	
-	generate_histogram(input_file_path, k_size, processors, hash_size)
+	generate_histogram(input_file_path, k_size, processors, hash_size, force_jellyfish)
 		
 	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
 	extension = str(input_file_path.split("/")[-1].split(".")[-1])
@@ -587,6 +579,8 @@ def argument_parsing():
 		help = "maximum size of Jellyfish's hash table in memory (in Gb). Only relevant if \
 			Jellyfish has to count k-mers (default: 1)", 
 		default = 1, type = int)
+	basic_options.add_argument("-f", "--force-jellyfish", help =  "force Jellyfish to be run on\
+			new data even if k-mers already appear to have been counted", action = "store_true")
 	
 	# Actual parser which is used
 	parser = argparse.ArgumentParser()
@@ -673,7 +667,7 @@ def main():
 
 		for size in args.k:
 			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
-				args.hash_size)
+				args.hash_size, args.force_jellyfish)
 
 	if args.func == "plot":
 		graph_title = args.title or args.path # If user has entered title then set title
