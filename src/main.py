@@ -471,26 +471,29 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 
 	# Count occurences of k-mers of size "k_size" in input file  
 
-	s = 100000000 # Initial s
+	s = 100000000 
 
-	l = math.ceil(math.log(s, 2))
-	mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
-
-	while mem_used < hash_size:
-		s = s * 1.1
+	if k_size > 21: 
+		# Otherwise memory usage prediction fails and starts predicting that no memory is going
+		# to be used by hash table
 		l = math.ceil(math.log(s, 2))
 		mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
 
-		if mem_used <= 0.0:
-			break
+		while mem_used < hash_size:
+			s = s * 1.1
+			l = math.ceil(math.log(s, 2))
+			mem_used = ((2**(l - 33)) * ((2*k_size) - l + 7))
 
-	if s != 100000000:
-		s = s / 1.1
-	
-	s = int(s)
+			if mem_used <= 0.0:
+				break
+
+		if s != 100000000:
+			s = s / 1.1
+		
+	hash_size = int(s)
 
 	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-		"count", ("-m " + str(k_size)), "-s " + str(s), "-t " + str(processors), "-C", 
+		"count", ("-m " + str(k_size)), "-s " + str(hash_size), "-t " + str(processors), "-C", 
 		input_file_path, '-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
