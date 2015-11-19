@@ -71,6 +71,12 @@ def update_assembly_config(new_location):
 
 
 def generate_settings():
+
+	"""
+	Reads settings file and returns a dictionary in which the keys are the individual options 
+	(stored as strings) and the values are the current value of that option. 
+	"""
+
 	settings_location = os.path.join(os.path.dirname(__file__), "../settings/settings.json")
 
 	with open(settings_location, "r") as settings_file:
@@ -79,13 +85,18 @@ def generate_settings():
 	return settings
 
 
-def update_settings(key, new_value):
+def update_settings(option, new_value):
+
+	"""
+	Saves the user's new value for 'option' in settings.json. 
+	"""
+
 	settings_location = os.path.join(os.path.dirname(__file__), "../settings/settings.json")
 
 	settings = generate_settings()
 
 	try:
-		settings[key] = new_value
+		settings[option] = new_value
 	except KeyError:
 		print "ERROR: Tried to update value not presently in settings file"
 
