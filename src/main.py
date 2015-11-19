@@ -36,6 +36,7 @@ import subprocess32
 import random
 import argparse
 import math
+import json
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -43,7 +44,6 @@ import numpy as np
 import scipy.signal as spysig
 
 import scripts.parse_dat_to_histo as parse_data
-import settings.all_settings as all_settings
 
 
 def simulate_reads(reference, coverage, read_length, insert_size, name):
@@ -66,6 +66,31 @@ def update_assembly_config(new_location):
 	lines[10] = new_location
 	with open(config_location , 'w') as assembly_config:
 		assembly_config.writelines(lines)
+
+	return
+
+
+def generate_settings():
+	settings_location = os.path.join(os.path.dirname(__file__), "../settings/settings.json")
+
+	with open(settings_location, "r") as settings_file:
+		settings = json.load(settings_file)
+
+	return settings
+
+
+def update_settings(key, new_value):
+	settings_location = os.path.join(os.path.dirname(__file__), "../settings/settings.json")
+
+	settings = generate_settings()
+
+	try:
+		settings[key] = new_value
+	except KeyError:
+		print "ERROR: Tried to update value not presently in settings file"
+
+	with open(settings_location, "w") as settings_file:
+		json.dump(settings, settings_file)
 
 	return
 
@@ -114,8 +139,7 @@ def ranges_from_extrema(extrema):
 	new_ranges = []
 	for i in xrange(len(peak_ranges)):
 		new_ranges.append([0, 0])
-		reload(all_settings)
-		settings = all_settings.generate_settings()
+		settings = generate_settings()
 		desired_border = settings['desired_border']
 
 		new_ranges[i][0] = peak_ranges[i][0] + (desired_border * peak_widths[i])
@@ -395,11 +419,9 @@ def plot_graph(hists_dict, graph_title, use_dots, max_peak = None):
 				else:
 					for x in ordinates:
 						plt.axvline(x, c = 'r')
+
+	settings = generate_settings()
 				
-				
-	reload(all_settings)
-	settings = all_settings.generate_settings() 
-	
 	plt.xlim(settings['x_lower'], settings['x_upper'])
 	plt.ylim(settings['y_lower'], settings['y_upper'])
 	plt.xscale(settings['x_scale'])
@@ -629,6 +651,10 @@ def argument_parsing():
 		help = "draw lines to split graph into peaks up to peak number l", type = int)
 	plot_subparser.add_argument("-t", "--title", help = "specify the title for the graph", 
 		type = str, default = "")
+	plot_subparser.add_argument("-x", "--xlim", help = "set new x-axis limit", type = int, 
+		default = 0)
+	plot_subparser.add_argument("-y", "--ylim", help = "set new y-axis limit", type = int, 
+		default = 0)
 	plot_subparser.set_defaults(func = "plot")
 
 	size_subparser.set_defaults(func = "size")
@@ -673,6 +699,17 @@ def main():
 				args.hash_size, args.force_jellyfish)
 
 	if args.func == "plot":
+
+		if args.xlim != 0:
+			if args.xlim < 0:
+				print "New x-axis limit is negative - probably not what you meant"
+			update_settings("x_upper", args.xlim)	
+
+		if args.ylim != 0:
+			if args.ylim < 0:
+				print "New y-axis limit is negative - probably not what you meant"
+			update_settings("y_upper", args.ylim)	
+
 		graph_title = args.title or args.path # If user has entered title then set title
 		plot_graph(hists_dict, graph_title, args.dots, args.lines)
 
