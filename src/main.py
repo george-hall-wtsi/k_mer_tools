@@ -46,19 +46,6 @@ import scipy.signal as spysig
 import scripts.parse_dat_to_histo as parse_data
 
 
-def simulate_reads(reference, coverage, read_length, insert_size, name):
-
-	"""
-	Cuts reads at random locations on a reference genome and stores them in a .fasta file.
-	"""
-
-	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), "scripts/sim_reads.sh"), 
-		reference, str(coverage), str(read_length), str(insert_size), name, 
-		os.path.dirname(__file__)])
-
-	return
-
-
 def update_assembly_config(new_location):
 	config_location = os.path.join(os.path.dirname(__file__), "scripts/assembly_config")
 	with open(config_location, 'r') as assembly_config:
@@ -580,14 +567,10 @@ def argument_parsing():
 	"""
 
 	# Most basic parser - all it asks for is path to some data
-	base_parser = argparse.ArgumentParser(add_help = False,
+	basic_options = argparse.ArgumentParser(add_help = False,
 		description = "A tool for computing genomic characteristics using k-mers")
 
-	base_parser.add_argument("path", type = str, help = "location at which the data is stored")
-
-	# Adds options to choose numbers of CPUs used and size of Jellyfish's hash table (could be 
-	# relevant in all fucntions other than simulate)
-	basic_options = argparse.ArgumentParser(add_help = False, parents = [base_parser])
+	basic_options.add_argument("path", type = str, help = "location at which the data is stored")
 	basic_options.add_argument("-p", "--processors", 
 		help = "maximum number of CPUs used (default: 1)", default = 1, type = int)
 	basic_options.add_argument("-s", "--hash-size", 
@@ -632,8 +615,6 @@ def argument_parsing():
 	indiv_repeats_subparser = subparsers.add_parser("indiv-repeats", 
 		help = "find repetitive k-mer words, and align repetitive contigs to reference for a \
 		specified range", parents = [some_repeats])
-	simulate_subparser = subparsers.add_parser("simulate", 
-		help = "simulate random reads from reference genome", parents = [base_parser])
 
 	plot_subparser.add_argument("-o", "--dots", 
 		help = "plot the histogram using red dots", action = "store_true")
@@ -658,16 +639,6 @@ def argument_parsing():
 	indiv_repeats_subparser.add_argument("l_lim", type = int, help = "lower limit of range")
 	indiv_repeats_subparser.add_argument("u_lim", type = int, help = "upper limit of range")
 	indiv_repeats_subparser.set_defaults(func = "indiv-repeats")
-
-	simulate_subparser.add_argument("coverage", type = float, 
-		help = "desired simulated coverage")
-	simulate_subparser.add_argument("length", type = int, 
-		help = "desired simulated read length")
-	simulate_subparser.add_argument("insert", type = int, 
-		help = "desired simulated insert size")
-	simulate_subparser.add_argument("-n", "--name", type = str, 
-		help = "name for simulated data", default = "")
-	simulate_subparser.set_defaults(func = "simulate_reads")
 
 	args = parser.parse_args()
 
@@ -738,9 +709,6 @@ def main():
 				args.reference, args.assembler, size, args.assembler_k, args.processors)
 			print "Finished finding repeats"
 
-	if args.func == "simulate_reads":
-		name = (args.name or args.path.split("/")[-1].split(".")[0])
-		simulate_reads(args.path, args.coverage, args.length, args.insert, name)
 
 	return
 
