@@ -24,13 +24,6 @@
 
 
 import os.path
-
-# Activate virtualenv
-file_location = os.path.dirname(__file__)
-activate_this = os.path.join(file_location, 'virtualenv/bin/activate_this.py')
-execfile(activate_this, dict(__file__ = activate_this))
-# Virtualenv should now be activated
-
 import sys
 import subprocess32
 import random
