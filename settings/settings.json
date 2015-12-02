@@ -1,1 +1,1 @@
-{"y_lower": 1, "y_scale": "log", "x_label": "k-mer Coverage", "y_label": "k-mer Count Frequency", "x_upper": 2000, "desired_border": 0.2, "y_upper": 10000000, "x_lower": 1, "x_scale": "linear", "jellyfish_bin": "", "spades_bin": "", "soap_bin": "", "gap_closer_bin: ""}
+{"y_lower": 1, "y_scale": "log", "x_label": "k-mer Coverage", "y_label": "k-mer Count Frequency", "x_upper": 2000, "desired_border": 0.2, "y_upper": 10000000, "x_lower": 1, "x_scale": "linear", "jellyfish_bin": "", "spades_bin": "", "soap_bin": "", "gap_closer_bin": ""}
