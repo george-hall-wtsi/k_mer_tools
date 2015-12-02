@@ -465,28 +465,43 @@ def generate_sample(hist_dict, sample_size):
 	return sample
 
 
-def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
+def compute_hist_from_fast(input_file_path, k_size, processors, hash_size, jellyfish_bin_path):
 	
 	"""
 	Uses Jellyfish to count k-mers of length k_size from input file. 
 	"""
 
-	if (processors == 1) and (hash_size == 1):
+	if (processors == 1) and (hash_size == 100000000):
 		print "Number of processors used and hash size have both been left at their default"+ \
-			"\nvalues. This is not a problem, but may not be what you wanted."
+			"\nvalues. This is not a problem, but was probably not what you intended."
 
 	print "Computing histogram data for k = " + str(k_size) + " for first time"
-	print "Reading data for k = " + str(k_size)
+	print "Counting k-mers for k = " + str(k_size)
 
 	file_name = input_file_path.split("/")[-1].split(".")[0]
 	mer_count_file = file_name + "_mer_counts_" + str(k_size) + ".jf"
 	current_dir = os.path.dirname(__file__)
 
-	# Count occurences of k-mers of size "k_size" in input file  
+	if jellyfish_bin_path != "":
+		update_settings("jellyfish_bin", jellyfish_bin_path)
 
-	subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-		"count", ("-m " + str(k_size)), "-s " + str(hash_size), "-t " + str(processors), "-C", 
-		input_file_path, '-o', mer_count_file])
+	jellyfish_bin_path = generate_settings()["jellyfish_bin"]
+
+	if jellyfish_bin_path == "":
+		print "ERROR: Path to Jellyfish executable not specified"
+		print "The path to it can be specified with the --jellyfish-bin flag, or it can be"
+		print "directly updated in the settings file (settings/settings.json)"
+		sys.exit()
+
+	if not os.path.isfile(jellyfish_bin_path):
+		print "ERROR: Jellyfish executable does not exist"
+		print "The path to it can be specified with the --jellyfish-bin flag, or it can be"
+		print "directly updated in the settings file (settings/settings.json)"
+		sys.exit()
+
+	# Count occurences of k-mers of size "k_size" in input file  
+	subprocess32.call([jellyfish_bin_path, "count", "-m", str(k_size), "-s", str(hash_size), 
+		"-t", str(processors), "-C", input_file_path, '-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
 	
@@ -494,13 +509,13 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	
 	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call([os.path.join(current_dir, "../bin/jellyfish"), 
-			"histo", mer_count_file], stdout = out_file)
+		subprocess32.call([jellyfish_bin_path, "histo", mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
 	
 
-def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force_jellyfish):
+def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force_jellyfish, 
+	jellyfish_bin_path):
 	
 	"""
 	Essentially ensures that a .hgram file exists and is stored at the correct location for
@@ -523,16 +538,19 @@ def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force
 			return
 	
 	else:
-		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size)
+		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size, 
+			jellyfish_bin_path)
 
-def calculate_hist_dict(input_file_path, k_size, processors, hash_size, force_jellyfish):
+def calculate_hist_dict(input_file_path, k_size, processors, hash_size, force_jellyfish, 
+	jellyfish_bin_path):
 
 	"""
 	Returns dictionary consisting of keys corresponding to occurrences and values 
 	corresponding to frequencies.
 	"""
 	
-	generate_histogram(input_file_path, k_size, processors, hash_size, force_jellyfish)
+	generate_histogram(input_file_path, k_size, processors, hash_size, force_jellyfish, 
+		jellyfish_bin_path)
 		
 	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
 	extension = str(input_file_path.split("/")[-1].split(".")[-1])
@@ -567,11 +585,13 @@ def argument_parsing():
 	basic_options.add_argument("-p", "--processors", 
 		help = "maximum number of CPUs used (default: 1)", default = 1, type = int)
 	basic_options.add_argument("-s", "--hash-size", 
-		help = "maximum size of Jellyfish's hash table in memory (in Gb). Only relevant if \
-			Jellyfish has to count k-mers (default: 1)", 
-		default = 1, type = int)
+		help = "number of entries in Jellyfish's hash table. Only relevant if Jellyfish has to \
+		count k-mers (default: 100,000,000)", 
+		default = 100000000, type = int)
 	basic_options.add_argument("-f", "--force-jellyfish", help =  "force Jellyfish to be run on\
-			new data even if k-mers already appear to have been counted", action = "store_true")
+		new data even if k-mers already appear to have been counted", action = "store_true")
+	basic_options.add_argument("--jellyfish-bin", help = "location of Jellyfish executable", 
+		type = str, nargs = "?", default = "")
 	
 	# Actual parser which is used
 	parser = argparse.ArgumentParser()
@@ -642,15 +662,12 @@ def main():
 
 	args = argument_parsing()
 
-	# Calculate hists_dict if k_mer_words have been supplied
-	if args.func in ['plot', 'size', 'repeats', 'indiv-repeats']:
+	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
+	hists_dict = {}
 
-		# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
-		hists_dict = {}
-
-		for size in args.k:
-			hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
-				args.hash_size, args.force_jellyfish)
+	for size in args.k:
+		hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
+			args.hash_size, args.force_jellyfish, args.jellyfish_bin)
 
 	if args.func == "plot":
 
@@ -682,7 +699,8 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size, args.processors, args.hash_size)
+				compute_hist_from_fast(args.path, size, args.processors, args.hash_size, 
+					args.jellyfish_bin)
 			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, size, 
 				args.assembler_k, args.processors, args.reference)
 			print "Finished finding repeats"
@@ -696,7 +714,8 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size, args.processors, args.hash_size)
+				compute_hist_from_fast(args.path, size, args.processors, args.hash_size, 
+					args.jellyfish_bin)
 
 			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
 				args.reference, args.assembler, size, args.assembler_k, args.processors)
