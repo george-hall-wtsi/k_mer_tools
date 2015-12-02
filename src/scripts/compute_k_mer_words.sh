@@ -34,6 +34,7 @@ UPPER_LIM=$3
 PEAK_NUM=$4
 MAIN_LOC=$5
 K_SIZE=$6
+JELLYFISH_BIN=$7
 
 WITHOUT_EXTENSION=${NAME%*.*}
 WITHOUT_EXTENSION=${WITHOUT_EXTENSION##*/}
@@ -44,7 +45,7 @@ if [ ! -d $WITHOUT_EXTENSION"_reads" ]; then
 	mkdir $WITHOUT_EXTENSION"_reads"
 fi
 
-$MAIN_LOC"/../bin/jellyfish" dump -L $LOWER_LIM -U $UPPER_LIM \
+$JELLYFISH_BIN dump -L $LOWER_LIM -U $UPPER_LIM \
 	-ct $WITHOUT_EXTENSION"_mer_counts_"$K_SIZE".jf" > \
 	$WITHOUT_EXTENSION"_reads/"$PEAK_NUM"_words.tmp.fasta"
 

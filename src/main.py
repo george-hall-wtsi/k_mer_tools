@@ -50,6 +50,26 @@ def update_assembly_config(new_location):
 	return
 
 
+def locate_binary(name, error_check = True):
+
+	bin_path = generate_settings()[name + "_bin"]
+
+	if error_check:
+		if bin_path == "":
+			print "ERROR: Path to " + name + " executable has not been specified"
+			print "The path to it can be specified with the --" + name + "-bin flag, or it can"
+			print "be directly updated in the settings file (settings/settings.json)"
+			sys.exit()
+
+		if not os.path.isfile(bin_path):
+			print "ERROR: " + name + " executable does not exist"
+			print "The path to it can be specified with the --" + name + "-bin flag, or it can"
+			print "be directly updated in the settings file (settings/settings.json)"
+			sys.exit()
+
+	return bin_path
+
+
 def generate_settings():
 
 	"""
@@ -78,7 +98,7 @@ def update_settings(option, new_value):
 	try:
 		settings[option] = new_value
 	except KeyError:
-		print "ERROR: Tried to update value not presently in settings file"
+		print "ERROR: Tried to update value not present in settings file"
 
 	with open(settings_location, "w") as settings_file:
 		json.dump(settings, settings_file)
@@ -99,18 +119,24 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	if assembler_k >= k_size:
 		raise Exception("Assembler k-mer size must be smaller than overall k-mer size")
 
+	jellyfish_bin_path = locate_binary("jellyfish")
+
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/compute_k_mer_words.sh"), file_name, str(lower_limit), str(upper_limit), 
-		str(peak_number), os.path.dirname(__file__), str(k_size)]) 
+		str(peak_number), os.path.dirname(__file__), str(k_size), jellyfish_bin_path]) 
 
 	if assembler == 'soap':
 		new_location = "q=" + os.path.abspath(file_path).split(".")[0] + "_reads/peak_" + \
 			str(peak_number) + "_k_mers-read.fastq\n"
 		update_assembly_config(new_location)
 
+	assembler_bin_path = locate_binary(assembler)
+	gap_closer_bin_path = locate_binary("gap_closer", error_check = False)
+
 	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/assemble_repeats.sh"), os.path.abspath(file_path), str(peak_number), 
-		os.path.dirname(__file__), assembler, str(assembler_k), str(processors)])
+		os.path.dirname(__file__), assembler, str(assembler_k), str(processors), 
+		assembler_bin_path, gap_closer_bin_path])
 	
 	if reference_path != "":
 		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
@@ -465,7 +491,7 @@ def generate_sample(hist_dict, sample_size):
 	return sample
 
 
-def compute_hist_from_fast(input_file_path, k_size, processors, hash_size, jellyfish_bin_path):
+def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	
 	"""
 	Uses Jellyfish to count k-mers of length k_size from input file. 
@@ -482,22 +508,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size, jelly
 	mer_count_file = file_name + "_mer_counts_" + str(k_size) + ".jf"
 	current_dir = os.path.dirname(__file__)
 
-	if jellyfish_bin_path != "":
-		update_settings("jellyfish_bin", jellyfish_bin_path)
-
-	jellyfish_bin_path = generate_settings()["jellyfish_bin"]
-
-	if jellyfish_bin_path == "":
-		print "ERROR: Path to Jellyfish executable not specified"
-		print "The path to it can be specified with the --jellyfish-bin flag, or it can be"
-		print "directly updated in the settings file (settings/settings.json)"
-		sys.exit()
-
-	if not os.path.isfile(jellyfish_bin_path):
-		print "ERROR: Jellyfish executable does not exist"
-		print "The path to it can be specified with the --jellyfish-bin flag, or it can be"
-		print "directly updated in the settings file (settings/settings.json)"
-		sys.exit()
+	jellyfish_bin_path = locate_binary("jellyfish")
 
 	# Count occurences of k-mers of size "k_size" in input file  
 	subprocess32.call([jellyfish_bin_path, "count", "-m", str(k_size), "-s", str(hash_size), 
@@ -514,8 +525,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size, jelly
 	print "Finished for k = " + str(k_size)
 	
 
-def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force_jellyfish, 
-	jellyfish_bin_path):
+def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force_jellyfish):
 	
 	"""
 	Essentially ensures that a .hgram file exists and is stored at the correct location for
@@ -538,19 +548,16 @@ def generate_histogram(input_file_path, k_mer_size, processors, hash_size, force
 			return
 	
 	else:
-		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size, 
-			jellyfish_bin_path)
+		compute_hist_from_fast(input_file_path, k_mer_size, processors, hash_size)
 
-def calculate_hist_dict(input_file_path, k_size, processors, hash_size, force_jellyfish, 
-	jellyfish_bin_path):
+def calculate_hist_dict(input_file_path, k_size, processors, hash_size, force_jellyfish):
 
 	"""
 	Returns dictionary consisting of keys corresponding to occurrences and values 
 	corresponding to frequencies.
 	"""
 	
-	generate_histogram(input_file_path, k_size, processors, hash_size, force_jellyfish, 
-		jellyfish_bin_path)
+	generate_histogram(input_file_path, k_size, processors, hash_size, force_jellyfish)
 		
 	file_name = str(input_file_path.split("/")[-1].split(".")[0]) + "_" + str(k_size) + "mer" 
 	extension = str(input_file_path.split("/")[-1].split(".")[-1])
@@ -615,6 +622,12 @@ def argument_parsing():
 	some_repeats.add_argument("-d", "--assembler_k",  
 		help = "k-mer size for assembler (must be smaller than overall k-mer size)",
 		type = int, default = 31)
+	some_repeats.add_argument("--spades-bin", help = "location of SPAdes executable",
+		type = str, nargs = "?", default = "")
+	some_repeats.add_argument("--soap-bin", help = "location of SOAPdenovo executable",
+		type = str, nargs = "?", default = "")
+	some_repeats.add_argument("--gap-closer-bin", help = "location of GapCloser",
+		type = str, nargs = "?", default = "")
 
 	subparsers = parser.add_subparsers(help = "select which function to execute")
 
@@ -665,9 +678,21 @@ def main():
 	# Dict in which to store k-mer size as key, and hist_dict for that k-mer size as value:
 	hists_dict = {}
 
+	if args.jellyfish_bin != "":
+		update_settings("jellyfish_bin", args.jellyfish_bin)
+
+	if args.func in ["repeats", "indiv-repeats"]:
+		if args.assembler == "spades" and args.spades_bin != "":
+			update_settings("spades_bin", args.spades_bin)
+		if args.assembler == "soap":
+			if args.soap_bin != "":
+				update_settings("soap_bin", args.soap_bin)
+			if args.gap_closer_bin != "":
+				update_settings("gap_closer_bin", args.gap_closer_bin)
+
 	for size in args.k:
 		hists_dict[size] = calculate_hist_dict(args.path, size, args.processors, 
-			args.hash_size, args.force_jellyfish, args.jellyfish_bin)
+			args.hash_size, args.force_jellyfish)
 
 	if args.func == "plot":
 
@@ -699,8 +724,7 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size, args.processors, args.hash_size, 
-					args.jellyfish_bin)
+				compute_hist_from_fast(args.path, size, args.processors, args.hash_size)
 			find_repeats(hists_dict[size], args.path, args.max_peak, args.assembler, size, 
 				args.assembler_k, args.processors, args.reference)
 			print "Finished finding repeats"
@@ -714,8 +738,7 @@ def main():
 		for size in hists_dict.keys():
 			file_name = args.path.split("/")[-1].split(".")[0]
 			if not os.path.isfile(file_name + "_mer_counts_" + str(size) + ".jf"):
-				compute_hist_from_fast(args.path, size, args.processors, args.hash_size, 
-					args.jellyfish_bin)
+				compute_hist_from_fast(args.path, size, args.processors, args.hash_size)
 
 			process_peak(args.path, file_name, args.l_lim, args.u_lim, args.peak_name, 
 				args.reference, args.assembler, size, args.assembler_k, args.processors)
