@@ -25,7 +25,7 @@
 
 import os.path
 import sys
-import subprocess32
+import subprocess
 import random
 import argparse
 import math
@@ -121,7 +121,7 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 
 	jellyfish_bin_path = locate_binary("jellyfish")
 
-	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
+	subprocess.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/compute_k_mer_words.sh"), file_name, str(lower_limit), str(upper_limit), 
 		str(peak_number), os.path.dirname(__file__), str(k_size), jellyfish_bin_path]) 
 
@@ -133,13 +133,13 @@ def process_peak(file_path, file_name, lower_limit, upper_limit, peak_number, re
 	assembler_bin_path = locate_binary(assembler)
 	gap_closer_bin_path = locate_binary("gap_closer", error_check = False)
 
-	subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
+	subprocess.call(['sh', os.path.join(os.path.dirname(__file__), 
 		"scripts/assemble_repeats.sh"), os.path.abspath(file_path), str(peak_number), 
 		os.path.dirname(__file__), assembler, str(assembler_k), str(processors), 
 		assembler_bin_path, gap_closer_bin_path])
 	
 	if reference_path != "":
-		subprocess32.call(['sh', os.path.join(os.path.dirname(__file__), 
+		subprocess.call(['sh', os.path.join(os.path.dirname(__file__), 
 			"scripts/align_sim_to_ref.sh"), os.path.abspath(reference_path), 
 			os.path.abspath(file_path), str(peak_number), os.path.dirname(__file__), 
 			str(assembler_k), str(processors)])
@@ -201,7 +201,7 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, assembler_k,
 		if reference_path != "":
 			# Mask repeats found in each peak (replace their loci with Xs on a copy of 
 			# the reference fasta)
-			subprocess32.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
+			subprocess.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
 				reference_path, working_dir, src, 
 				(working_dir + "/peak_" + str(peak_number) +"/peak_" + str(peak_number) + \
 				"_map")])
@@ -211,11 +211,11 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, assembler_k,
 	if reference_path != "":	
 		# 'Shred' reference and map to itself (to find all repeats for testing purposes):
 		update_assembly_config("q=" + reference_path + "\n")
-		subprocess32.call(['sh', os.path.join(src, "scripts/ssaha_shred.sh"), 
+		subprocess.call(['sh', os.path.join(src, "scripts/ssaha_shred.sh"), 
 			reference_path, file_name.split(".")[0], src])
 
 		# Mask repeated regions from each mode in shredded reads
-		subprocess32.call(['grep', ':00', working_dir + "/shred_map"], 
+		subprocess.call(['grep', ':00', working_dir + "/shred_map"], 
 			stdout = open(working_dir + "/shred_grep", "w"))
 		
 		with open(working_dir + "/shred_grep", "r") as f:
@@ -234,7 +234,7 @@ def find_repeats(hist_dict, file_path, max_peak, assembler, k_size, assembler_k,
 								" ".join(str(x).rjust(10) for x in line[3:8]) + " " + \
 								" ".join(str(x) for x in line[8:] ) + "\n")
 		
-			subprocess32.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
+			subprocess.call(['sh', os.path.join(src, "scripts/mask_repeats.sh"), 
 			reference_path, working_dir, src, os.path.abspath(working_dir + "/shred_" + \
 				str(n) + "_repeats")])
 
@@ -511,7 +511,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	jellyfish_bin_path = locate_binary("jellyfish")
 
 	# Count occurences of k-mers of size "k_size" in input file  
-	subprocess32.call([jellyfish_bin_path, "count", "-m", str(k_size), "-s", str(hash_size), 
+	subprocess.call([jellyfish_bin_path, "count", "-m", str(k_size), "-s", str(hash_size), 
 		"-t", str(processors), "-C", input_file_path, '-o', mer_count_file])
 
 	print "Processing histogram for k = " + str(k_size)
@@ -520,7 +520,7 @@ def compute_hist_from_fast(input_file_path, k_size, processors, hash_size):
 	
 	with open(file_name + ".hgram","w") as out_file:
 		# Computes histogram data and stores in "out_file"
-		subprocess32.call([jellyfish_bin_path, "histo", mer_count_file], stdout = out_file)
+		subprocess.call([jellyfish_bin_path, "histo", mer_count_file], stdout = out_file)
 	
 	print "Finished for k = " + str(k_size)
 	
