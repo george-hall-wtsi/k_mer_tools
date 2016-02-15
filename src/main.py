@@ -2,7 +2,7 @@
 
 
 ################################################################################
-# Copyright (c) 2015 Genome Research Ltd. 
+# Copyright (c) 2015 - 2016 Genome Research Ltd. 
 #  
 # Author: George Hall <gh10@sanger.ac.uk> 
 # 
@@ -25,11 +25,16 @@
 
 import os.path
 import sys
-import subprocess
 import random
 import argparse
 import math
 import json
+
+# If user has subprocess32 installed then use it, else use normal subprocess module
+try:
+    import subprocess32 as subprocess
+except ImportError:
+    import subprocess
 
 import matplotlib
 import matplotlib.pyplot as plt
